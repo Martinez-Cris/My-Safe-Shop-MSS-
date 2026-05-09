@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  imageUrl    String?   @map("image_url")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  products    Product[]
+  @@map("categories")
+}
+
+model Product {
+  id                 String      @id @default(uuid())
+  name               String
+  description        String
+  price              Decimal     @db.Decimal(10, 2)
+  stock              Int         @default(1)
+  size               String?
+  brand              String?
+  condition          Condition   @default(GOOD)
+  imageUrl           String?     @map("image_url")
+  cloudinaryPublicId String?     @map("cloudinary_public_id")
+  isActive           Boolean     @default(true) @map("is_active")
+  categoryId         String      @map("category_id")
+  createdAt          DateTime    @default(now()) @map("created_at")
+  updatedAt          DateTime    @updatedAt @map("updated_at")
+  category           Category    @relation(fields: [categoryId], references: [id])
+  orderItems         OrderItem[]
+  @@index([categoryId])
+  @@index([isActive])
+  @@map("products")
+}
+
+enum Condition {
+  NEW
+  LIKE_NEW
+  GOOD
+  FAIR
+}
+
+model Order {
+  id                 String      @id @default(uuid())
+  status             OrderStatus @default(PENDING)
+  total              Decimal     @db.Decimal(10, 2)
+  buyerName          String      @map("buyer_name")
+  buyerEmail         String      @map("buyer_email")
+  buyerPhone         String?     @map("buyer_phone")
+  shippingAddress    String?     @map("shipping_address")
+  paymentGateway     String?     @map("payment_gateway")
+  paymentIntentId    String?     @unique @map("payment_intent_id")
+  paymentConfirmedAt DateTime?   @map("payment_confirmed_at")
+  trackingNumber     String?     @map("tracking_number")
+  shippedAt          DateTime?   @map("shipped_at")
+  createdAt          DateTime    @default(now()) @map("created_at")
+  updatedAt          DateTime    @updatedAt @map("updated_at")
+  items              OrderItem[]
+  @@index([status])
+  @@index([buyerEmail])
+  @@map("orders")
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model OrderItem {
+  id        String   @id @default(uuid())
+  quantity  Int      @default(1)
+  unitPrice Decimal  @db.Decimal(10, 2) @map("unit_price")
+  orderId   String   @map("order_id")
+  productId String   @map("product_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id])
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+enum Role {
+  CLIENT
+  ADMIN
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(CLIENT)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
