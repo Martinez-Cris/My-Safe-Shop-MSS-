@@ -4,12 +4,16 @@ import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
 
+
 export interface User {
   id: string;
   name: string;
   email: string;
   role: 'CLIENT' | 'ADMIN';
   createdAt: string;
+  phone?: string;
+  address?: string;
+  city?: string;
 }
 
 export interface AuthResponse {

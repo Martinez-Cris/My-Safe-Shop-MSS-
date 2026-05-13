@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -16,7 +16,7 @@ import { AuthService } from '../../core/services/auth.service';
   selector: 'app-login',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule, RouterLink,
+    CommonModule, ReactiveFormsModule,
     MatCardModule, MatButtonModule, MatIconModule,
     MatFormFieldModule, MatInputModule, MatTabsModule,
     MatProgressSpinnerModule, MatSnackBarModule,
@@ -26,7 +26,9 @@ import { AuthService } from '../../core/services/auth.service';
       <div class="auth-container">
 
         <div class="auth-brand">
-          <mat-icon>storefront</mat-icon>
+          <div class="brand-icon-wrap">
+            <mat-icon>storefront</mat-icon>
+          </div>
           <h1>MY SAFE SHOP</h1>
           <p>Ropa de segunda mano verificada</p>
         </div>
@@ -55,7 +57,7 @@ import { AuthService } from '../../core/services/auth.service';
                   <mat-error>Contraseña requerida</mat-error>
                 </mat-form-field>
 
-                <button mat-raised-button color="primary" type="submit"
+                <button mat-raised-button type="submit"
                   class="submit-btn" [disabled]="isLoading">
                   <mat-spinner *ngIf="isLoading" diameter="20"></mat-spinner>
                   <mat-icon *ngIf="!isLoading">login</mat-icon>
@@ -98,7 +100,7 @@ import { AuthService } from '../../core/services/auth.service';
                   <mat-error>Mínimo 6 caracteres</mat-error>
                 </mat-form-field>
 
-                <button mat-raised-button color="primary" type="submit"
+                <button mat-raised-button type="submit"
                   class="submit-btn" [disabled]="isLoading">
                   <mat-spinner *ngIf="isLoading" diameter="20"></mat-spinner>
                   <mat-icon *ngIf="!isLoading">person_add</mat-icon>
@@ -115,56 +117,54 @@ import { AuthService } from '../../core/services/auth.service';
   styles: [`
     .auth-page {
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(135deg, #1a1033 0%, #2d1b69 100%);
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%);
       padding: 2rem;
+      position: relative; overflow: hidden;
     }
-    .auth-container {
-      width: 100%;
-      max-width: 440px;
+    .auth-page::before {
+      content: ''; position: absolute;
+      width: 400px; height: 400px;
+      background: rgba(255,255,255,0.04); border-radius: 50%;
+      top: -100px; right: -100px;
     }
-    .auth-brand {
-      text-align: center;
-      color: white;
-      margin-bottom: 2rem;
-      mat-icon { font-size: 3rem; width: 3rem; height: 3rem; color: #a78bfa; }
-      h1 { font-size: 1.75rem; font-weight: 700; margin: 0.5rem 0 0.25rem; }
-      p { color: rgba(255,255,255,0.6); margin: 0; font-size: 0.9rem; }
+    .auth-page::after {
+      content: ''; position: absolute;
+      width: 300px; height: 300px;
+      background: rgba(255,255,255,0.04); border-radius: 50%;
+      bottom: -80px; left: -80px;
     }
+    .auth-container { width: 100%; max-width: 440px; position: relative; z-index: 1; }
+    .auth-brand { text-align: center; color: white; margin-bottom: 2rem; }
+    .brand-icon-wrap {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 72px; height: 72px;
+      background: rgba(255,255,255,0.15); border-radius: 50%; margin-bottom: 1rem;
+      backdrop-filter: blur(8px); border: 2px solid rgba(255,255,255,0.25);
+      mat-icon { font-size: 2.2rem; width: 2.2rem; height: 2.2rem; color: #6ee7b7; }
+    }
+    .auth-brand h1 { font-size: 1.85rem; font-weight: 800; margin: 0 0 0.35rem; letter-spacing: 0.05em; }
+    .auth-brand p { color: rgba(255,255,255,0.65); margin: 0; font-size: 0.9rem; }
     .auth-card {
-      border-radius: 16px !important;
-      padding: 0.5rem;
-      box-shadow: 0 25px 50px rgba(0,0,0,0.4) !important;
+      border-radius: 20px !important; padding: 0.5rem;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.35) !important;
     }
     .auth-form {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
+      display: flex; flex-direction: column; gap: 0.5rem;
       padding: 1.5rem 1rem 1rem;
     }
     .full-width { width: 100%; }
     .submit-btn {
-      height: 48px;
-      font-size: 1rem;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
+      height: 50px; font-size: 1rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
       margin-top: 0.5rem;
-      background: linear-gradient(135deg, #7c3aed, #a855f7) !important;
-      color: white !important;
+      background: linear-gradient(135deg, #059669, #10b981) !important;
+      color: white !important; border-radius: 10px !important;
+      box-shadow: 0 4px 15px rgba(16,185,129,0.4) !important;
     }
     .admin-hint {
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-      color: #9ca3af;
-      font-size: 0.75rem;
-      margin-top: 0.5rem;
-      justify-content: center;
+      display: flex; align-items: center; gap: 0.35rem;
+      color: #9ca3af; font-size: 0.75rem; margin-top: 0.5rem; justify-content: center;
       mat-icon { font-size: 1rem; width: 1rem; height: 1rem; }
     }
   `]
@@ -173,7 +173,6 @@ export class LoginComponent {
   activeTab = 0;
   isLoading = false;
   showPassword = false;
-
   loginForm: FormGroup;
   registerForm: FormGroup;
 
@@ -186,15 +185,13 @@ export class LoginComponent {
     if (this.authService.isLoggedIn()) {
       this.router.navigate(['/shop']);
     }
-
     this.loginForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email]],
+      email:    ['', [Validators.required, Validators.email]],
       password: ['', Validators.required],
     });
-
     this.registerForm = this.fb.group({
-      name: ['', [Validators.required, Validators.minLength(3)]],
-      email: ['', [Validators.required, Validators.email]],
+      name:     ['', [Validators.required, Validators.minLength(3)]],
+      email:    ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
     });
   }
@@ -206,11 +203,7 @@ export class LoginComponent {
       next: (res) => {
         this.isLoading = false;
         this.snackBar.open(`¡Bienvenido, ${res.user.name}!`, 'OK', { duration: 3000 });
-        if (res.user.role === 'ADMIN') {
-          this.router.navigate(['/admin']);
-        } else {
-          this.router.navigate(['/shop']);
-        }
+        this.router.navigate([res.user.role === 'ADMIN' ? '/admin' : '/shop']);
       },
       error: (err) => {
         this.isLoading = false;
@@ -234,4 +227,4 @@ export class LoginComponent {
       },
     });
   }
-} 
+}

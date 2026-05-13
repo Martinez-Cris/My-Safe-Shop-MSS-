@@ -130,7 +130,7 @@ import { CartItem } from '../../../core/models/product.model';
     .item-info { flex: 1;
       h3 { margin: 0 0 0.25rem; font-size: 0.95rem; font-weight: 600; }
       .item-meta { color: #6b7280; font-size: 0.8rem; margin: 0.25rem 0; }
-      .item-price { color: #7c3aed; font-weight: 700; margin: 0.25rem 0; } }
+      .item-price { color: #059669; font-weight: 700; margin: 0.25rem 0; } }
     .single-unit-badge { display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; color: #d97706; background: #fef3c7; padding: 2px 8px; border-radius: 99px; margin-top: 0.25rem;
       mat-icon { font-size: 0.85rem; width: 0.85rem; height: 0.85rem; } }
     .item-controls { display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; }
@@ -144,7 +144,7 @@ import { CartItem } from '../../../core/models/product.model';
       .summary-row { display: flex; justify-content: space-between; padding: 0.4rem 0; font-size: 0.85rem; color: #374151; }
       mat-divider { margin: 0.75rem 0; } }
     .summary-total { display: flex; justify-content: space-between; font-size: 1.1rem;
-      .total-price { color: #7c3aed; font-size: 1.25rem; } }
+      .total-price { color: #059669; font-size: 1.25rem; } }
     .buyer-form-card { padding: 1rem; h3 { margin: 0 0 1rem; font-size: 1rem; } }
     .checkout-form { display: flex; flex-direction: column; gap: 0.5rem; }
     .full-width { width: 100%; }

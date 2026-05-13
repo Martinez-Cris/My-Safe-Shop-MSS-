@@ -111,7 +111,7 @@ import { Order } from '../../core/models/product.model';
     .orders-container { max-width: 900px; margin: 0 auto; padding: 2rem 1rem; }
     .orders-header {
       margin-bottom: 2rem;
-      h1 { display: flex; align-items: center; gap: 0.5rem; font-size: 1.75rem; font-weight: 700; color: #1a1033; margin: 0 0 0.5rem; }
+      h1 { display: flex; align-items: center; gap: 0.5rem; font-size: 1.75rem; font-weight: 700; color: #064e3b; margin: 0 0 0.5rem; }
       p { color: #6b7280; margin: 0; }
     }
     .loading { display: flex; justify-content: center; padding: 4rem; }
@@ -136,7 +136,7 @@ import { Order } from '../../core/models/product.model';
       &.delivered { background: #f3f4f6; color: #374151; }
       &.cancelled { background: #fee2e2; color: #dc2626; }
     }
-    .order-total { font-weight: 700; color: #7c3aed; font-size: 1rem; }
+    .order-total { font-weight: 700; color: #059669; font-size: 1rem; }
     .order-date { font-size: 0.85rem; color: #6b7280; }
     .order-detail { padding-top: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;
       @media (max-width: 700px) { grid-template-columns: 1fr; } }
@@ -149,19 +149,19 @@ import { Order } from '../../core/models/product.model';
       img { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
       .item-name { font-weight: 600; font-size: 0.9rem; margin: 0; }
       .item-meta { color: #6b7280; font-size: 0.8rem; margin: 0.25rem 0 0; }
-      .item-subtotal { margin-left: auto; font-weight: 700; color: #7c3aed; white-space: nowrap; }
+      .item-subtotal { margin-left: auto; font-weight: 700; color: #059669; white-space: nowrap; }
     }
     .order-info { display: flex; flex-direction: column; gap: 1rem; }
     .info-row {
       display: flex; gap: 0.75rem; align-items: flex-start;
-      mat-icon { color: #7c3aed; margin-top: 2px; flex-shrink: 0; }
+      mat-icon { color: #059669; margin-top: 2px; flex-shrink: 0; }
       .info-label { font-size: 0.8rem; color: #6b7280; margin: 0; }
       .info-value { font-size: 0.9rem; font-weight: 500; margin: 0.25rem 0 0; }
     }
     .order-total-row {
       display: flex; justify-content: space-between; align-items: center;
       padding-top: 1rem; border-top: 2px solid #f3f4f6; font-size: 1rem;
-      .total-amount { color: #7c3aed; font-size: 1.25rem; }
+      .total-amount { color: #059669; font-size: 1.25rem; }
     }
   `]
 })

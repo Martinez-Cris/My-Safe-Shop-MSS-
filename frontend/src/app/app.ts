@@ -27,9 +27,9 @@ import { AsyncPipe } from '@angular/common';
       </a>
       <span class="spacer"></span>
 
-      <a mat-button routerLink="/shop" routerLinkActive="active-link">
-        <mat-icon>storefront</mat-icon> Tienda
-      </a>
+      <a mat-button routerLink="/shop" routerLinkActive="active-link" *ngIf="!isAdmin">
+  <mat-icon>storefront</mat-icon> Tienda
+</a>
 
       <ng-container *ngIf="!isAdmin">
         <a mat-button routerLink="/cart" routerLinkActive="active-link">
@@ -64,9 +64,12 @@ import { AsyncPipe } from '@angular/common';
           </span>
         </div>
         <mat-divider></mat-divider>
-        <button mat-menu-item (click)="logout()">
-          <mat-icon>logout</mat-icon> Cerrar sesión
-        </button>
+<a mat-menu-item routerLink="/perfil" *ngIf="!isAdmin">
+  <mat-icon>manage_accounts</mat-icon> Mi Perfil
+</a>
+<button mat-menu-item (click)="logout()">
+  <mat-icon>logout</mat-icon> Cerrar sesión
+</button>
       </mat-menu>
     </mat-toolbar>
 
@@ -74,7 +77,7 @@ import { AsyncPipe } from '@angular/common';
   `,
   styles: [`
     .navbar {
-      background: #1a1033 !important;
+      background: #064e3b !important;
       color: white;
       position: sticky;
       top: 0;
@@ -86,7 +89,7 @@ import { AsyncPipe } from '@angular/common';
     }
     .spacer { flex: 1; }
     a[mat-button] { color: rgba(255,255,255,0.8) !important; }
-    .active-link { color: #c4b5fd !important; }
+    .active-link { color: #a7f3d0 !important; }
     .user-btn {
       color: rgba(255,255,255,0.8) !important;
       display: flex; align-items: center; gap: 0.25rem; margin-left: 0.5rem;
@@ -96,7 +99,7 @@ import { AsyncPipe } from '@angular/common';
       .user-name { font-weight: 600; margin: 0; font-size: 0.9rem; }
       .user-email { color: #6b7280; font-size: 0.8rem; margin: 2px 0 6px; }
       .role-badge {
-        background: #f3e8ff; color: #7c3aed;
+        background: #d1fae5; color: #059669;
         font-size: 0.7rem; font-weight: 700; padding: 2px 10px; border-radius: 99px;
         &.admin { background: #fef3c7; color: #d97706; }
       }

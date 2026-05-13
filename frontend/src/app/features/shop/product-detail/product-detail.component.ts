@@ -114,7 +114,7 @@ import { Product } from '../../../core/models/product.model';
     .detail-container { max-width: 1100px; margin: 0 auto; padding: 2rem 1rem; }
     .back-link {
       display: inline-flex; align-items: center; gap: 0.25rem;
-      color: #7c3aed; text-decoration: none; font-size: 0.9rem; margin-bottom: 2rem;
+      color: #059669; text-decoration: none; font-size: 0.9rem; margin-bottom: 2rem;
       &:hover { text-decoration: underline; }
     }
     .loading { display: flex; justify-content: center; padding: 4rem; }
@@ -129,7 +129,7 @@ import { Product } from '../../../core/models/product.model';
     }
     .condition-badge {
       position: absolute; top: 12px; left: 12px;
-      background: rgba(255,255,255,0.95); color: #7c3aed;
+      background: rgba(255,255,255,0.95); color: #059669;
       font-weight: 700; padding: 4px 14px; border-radius: 99px;
       &.large { font-size: 0.85rem; }
     }
@@ -142,12 +142,12 @@ import { Product } from '../../../core/models/product.model';
     .product-info-section { display: flex; flex-direction: column; gap: 1.5rem; }
     .product-meta {
       display: flex; gap: 0.75rem; align-items: center;
-      .product-category { background: #f3e8ff; color: #7c3aed; font-size: 0.8rem; font-weight: 600; padding: 4px 12px; border-radius: 99px; }
+      .product-category { background: #d1fae5; color: #059669; font-size: 0.8rem; font-weight: 600; padding: 4px 12px; border-radius: 99px; }
       .product-brand { font-size: 0.85rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
     }
-    .product-name { font-size: 1.75rem; font-weight: 800; color: #1a1033; margin: 0; line-height: 1.2; }
+    .product-name { font-size: 1.75rem; font-weight: 800; color: #064e3b; margin: 0; line-height: 1.2; }
     .product-price-section {
-      .product-price { font-size: 2rem; font-weight: 800; color: #7c3aed; display: block; }
+      .product-price { font-size: 2rem; font-weight: 800; color: #059669; display: block; }
       .price-note { font-size: 0.8rem; color: #9ca3af; }
     }
     .product-specs {
@@ -156,7 +156,7 @@ import { Product } from '../../../core/models/product.model';
     }
     .spec-item {
       display: flex; gap: 0.5rem; align-items: flex-start;
-      mat-icon { color: #7c3aed; font-size: 1.1rem; margin-top: 2px; }
+      mat-icon { color: #059669; font-size: 1.1rem; margin-top: 2px; }
       .spec-label { font-size: 0.75rem; color: #6b7280; margin: 0; }
       .spec-value { font-size: 0.9rem; font-weight: 600; color: #1f2937; margin: 0.15rem 0 0; }
       .low-stock { color: #d97706; }

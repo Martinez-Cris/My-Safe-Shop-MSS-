@@ -51,6 +51,29 @@ export class AuthService {
     return this.sanitizeUser(user);
   }
 
+  async updateProfile(userId: string, data: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    city?: string;
+  }) {
+    const user = await this.usersRepository.updateProfile(userId, data);
+    return this.sanitizeUser(user);
+  }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+    const user = await this.usersRepository.findById(userId);
+    if (!user) throw new UnauthorizedException('Usuario no encontrado');
+
+    const isValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isValid) throw new BadRequestException('La contraseña actual es incorrecta');
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await this.usersRepository.updatePassword(userId, hashed);
+    return { message: 'Contraseña actualizada correctamente' };
+  }
+
   private generateToken(user: any): string {
     const payload: JwtPayload = {
       sub: user.id,

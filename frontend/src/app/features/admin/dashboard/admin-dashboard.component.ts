@@ -138,37 +138,30 @@ import { environment } from '../../../../environments/environment';
                 <td mat-cell *matCellDef="let o">{{ o.createdAt | date:'dd/MM/yy HH:mm' }}</td>
               </ng-container>
               <ng-container matColumnDef="actions">
-  <th mat-header-cell *matHeaderCellDef>Acciones</th>
-  <td mat-cell *matCellDef="let o">
-    <div class="action-buttons">
-      <!-- PENDIENTE → no hay acción de pago manual, el webhook lo hace -->
-      
-      <!-- PAGADO → marcar como enviado -->
-      <button mat-icon-button color="primary"
-        *ngIf="o.status === 'PAID'"
-        (click)="markAsShipped(o.id)"
-        matTooltip="Marcar como enviado">
-        <mat-icon>local_shipping</mat-icon>
-      </button>
-
-      <!-- ENVIADO → marcar como entregado -->
-      <button mat-icon-button color="accent"
-        *ngIf="o.status === 'SHIPPED'"
-        (click)="markAsDelivered(o.id)"
-        matTooltip="Marcar como entregado">
-        <mat-icon>done_all</mat-icon>
-      </button>
-
-      <!-- PENDIENTE o PAGADO → cancelar -->
-      <button mat-icon-button color="warn"
-        *ngIf="o.status === 'PENDING' || o.status === 'PAID'"
-        (click)="markAsCancelled(o.id)"
-        matTooltip="Cancelar orden">
-        <mat-icon>cancel</mat-icon>
-      </button>
-    </div>
-  </td>
-</ng-container>
+                <th mat-header-cell *matHeaderCellDef>Acciones</th>
+                <td mat-cell *matCellDef="let o">
+                  <div class="action-buttons">
+                    <button mat-icon-button color="primary"
+                      *ngIf="o.status === 'PAID'"
+                      (click)="markAsShipped(o.id)"
+                      matTooltip="Marcar como enviado">
+                      <mat-icon>local_shipping</mat-icon>
+                    </button>
+                    <button mat-icon-button color="accent"
+                      *ngIf="o.status === 'SHIPPED'"
+                      (click)="markAsDelivered(o.id)"
+                      matTooltip="Marcar como entregado">
+                      <mat-icon>done_all</mat-icon>
+                    </button>
+                    <button mat-icon-button color="warn"
+                      *ngIf="o.status === 'PENDING' || o.status === 'PAID'"
+                      (click)="markAsCancelled(o.id)"
+                      matTooltip="Cancelar orden">
+                      <mat-icon>cancel</mat-icon>
+                    </button>
+                  </div>
+                </td>
+              </ng-container>
               <tr mat-header-row *matHeaderRowDef="orderColumns"></tr>
               <tr mat-row *matRowDef="let row; columns: orderColumns;"></tr>
             </table>
@@ -178,6 +171,74 @@ import { environment } from '../../../../environments/environment';
 
         <!-- ══ Productos publicados ══ -->
         <div *ngIf="activeTab === 'products'" class="tab-content">
+
+          <!-- Panel de edición -->
+          <div *ngIf="editingProduct" class="edit-panel">
+            <div class="edit-panel-header">
+              <h3><mat-icon>edit</mat-icon> Editando: {{ editingProduct.name }}</h3>
+              <button mat-icon-button (click)="cancelEdit()">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+            <form [formGroup]="editForm" (ngSubmit)="saveEdit()" class="edit-form">
+              <div class="edit-preview">
+                <img [src]="editingProduct.imageUrl || 'https://via.placeholder.com/200'"
+                  [alt]="editingProduct.name">
+              </div>
+              <div class="edit-fields">
+                <mat-form-field appearance="outline">
+                  <mat-label>Nombre</mat-label>
+                  <input matInput formControlName="name">
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Descripción</mat-label>
+                  <textarea matInput formControlName="description" rows="3"></textarea>
+                </mat-form-field>
+                <div class="edit-row">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Precio (COP)</mat-label>
+                    <input matInput formControlName="price" type="number">
+                    <span matPrefix>$&nbsp;</span>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Stock</mat-label>
+                    <input matInput formControlName="stock" type="number">
+                  </mat-form-field>
+                </div>
+                <div class="edit-row">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Marca</mat-label>
+                    <input matInput formControlName="brand">
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Talla</mat-label>
+                    <input matInput formControlName="size">
+                  </mat-form-field>
+                </div>
+                <mat-form-field appearance="outline">
+                  <mat-label>Condición</mat-label>
+                  <mat-select formControlName="condition">
+                    <mat-option value="NEW">Nuevo</mat-option>
+                    <mat-option value="LIKE_NEW">Como Nuevo</mat-option>
+                    <mat-option value="GOOD">Buen Estado</mat-option>
+                    <mat-option value="FAIR">Aceptable</mat-option>
+                  </mat-select>
+                </mat-form-field>
+                <div class="edit-actions">
+                  <button mat-stroked-button type="button" (click)="cancelEdit()">
+                    Cancelar
+                  </button>
+                  <button mat-raised-button type="submit"
+                    class="save-edit-btn" [disabled]="isSavingEdit">
+                    <mat-spinner *ngIf="isSavingEdit" diameter="18"></mat-spinner>
+                    <mat-icon *ngIf="!isSavingEdit">save</mat-icon>
+                    {{ isSavingEdit ? 'Guardando...' : 'Guardar Cambios' }}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+
           <div class="tab-header">
             <h2><mat-icon>inventory_2</mat-icon> Productos Publicados</h2>
             <button mat-raised-button color="primary" (click)="activeTab = 'upload'">
@@ -188,7 +249,8 @@ import { environment } from '../../../../environments/environment';
             <mat-spinner diameter="40"></mat-spinner>
           </div>
           <div *ngIf="!isLoadingProducts" class="products-grid-admin">
-            <mat-card *ngFor="let product of allProducts" class="product-admin-card">
+            <mat-card *ngFor="let product of allProducts" class="product-admin-card"
+              [class.editing]="editingProduct?.id === product.id">
               <div class="product-admin-img">
                 <img [src]="product.imageUrl || 'https://via.placeholder.com/200'"
                   [alt]="product.name">
@@ -204,6 +266,11 @@ import { environment } from '../../../../environments/environment';
                 <p class="admin-size" *ngIf="product.size">Talla: {{ product.size }}</p>
               </mat-card-content>
               <mat-card-actions class="product-admin-actions">
+                <button mat-icon-button color="primary"
+                  (click)="openEditProduct(product)"
+                  matTooltip="Editar producto">
+                  <mat-icon>edit</mat-icon>
+                </button>
                 <button mat-icon-button color="warn"
                   (click)="deleteProduct(product.id)"
                   matTooltip="Eliminar producto">
@@ -239,21 +306,18 @@ import { environment } from '../../../../environments/environment';
                 <mat-icon>swap_horiz</mat-icon> Cambiar foto
               </button>
             </div>
-
             <form [formGroup]="productForm" class="product-form" (ngSubmit)="onSubmitProduct()">
               <mat-form-field appearance="outline">
                 <mat-label>Nombre del artículo</mat-label>
                 <input matInput formControlName="name" placeholder="Ej: Abrigo de Lana Zara">
                 <mat-error>El nombre es requerido</mat-error>
               </mat-form-field>
-
               <mat-form-field appearance="outline" class="full-width">
                 <mat-label>Descripción</mat-label>
                 <textarea matInput formControlName="description" rows="3"
                   placeholder="Describe el artículo: estado, detalles..."></textarea>
                 <mat-error>La descripción es requerida</mat-error>
               </mat-form-field>
-
               <div class="form-row">
                 <mat-form-field appearance="outline">
                   <mat-label>Precio (COP)</mat-label>
@@ -266,7 +330,6 @@ import { environment } from '../../../../environments/environment';
                   <input matInput formControlName="stock" type="number">
                 </mat-form-field>
               </div>
-
               <div class="form-row">
                 <mat-form-field appearance="outline">
                   <mat-label>Marca</mat-label>
@@ -277,7 +340,6 @@ import { environment } from '../../../../environments/environment';
                   <input matInput formControlName="size">
                 </mat-form-field>
               </div>
-
               <div class="form-row">
                 <mat-form-field appearance="outline">
                   <mat-label>Condición</mat-label>
@@ -298,7 +360,6 @@ import { environment } from '../../../../environments/environment';
                   <mat-error>Selecciona una categoría</mat-error>
                 </mat-form-field>
               </div>
-
               <button mat-raised-button color="primary" type="submit"
                 [disabled]="isUploading" class="submit-btn">
                 <mat-spinner *ngIf="isUploading" diameter="20"></mat-spinner>
@@ -313,18 +374,18 @@ import { environment } from '../../../../environments/environment';
     </div>
   `,
   styles: [`
-    .admin-layout { display: flex; min-height: calc(100vh - 64px); background: #f8f7ff; }
+    .admin-layout { display: flex; min-height: calc(100vh - 64px); background: #f0fdf4; }
     .sidebar {
-      width: 200px; background: #1a1033; color: white;
+      width: 200px; background: #064e3b; color: white;
       padding: 1.5rem 1rem; display: flex; flex-direction: column; gap: 1.5rem; flex-shrink: 0;
     }
     .action-buttons { display: flex; gap: 0.25rem; align-items: center; }
     .sidebar-brand {
       display: flex; align-items: center; gap: 0.75rem;
       padding-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1);
-      mat-icon { color: #a78bfa; font-size: 2rem; }
+      mat-icon { color: #6ee7b7; font-size: 2rem; }
       .brand-name { display: block; font-weight: 700; font-size: 0.95rem; }
-      .brand-role { display: block; font-size: 0.75rem; color: #a78bfa; }
+      .brand-role { display: block; font-size: 0.75rem; color: #6ee7b7; }
     }
     .ws-status {
       display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem;
@@ -339,8 +400,8 @@ import { environment } from '../../../../environments/environment';
       border: none; background: transparent; color: rgba(255,255,255,0.7);
       border-radius: 8px; cursor: pointer; font-size: 0.9rem; text-align: left; width: 100%;
       &:hover { background: rgba(255,255,255,0.08); color: white; }
-      &.active { background: rgba(124,58,237,0.3); color: #c4b5fd; }
-      .badge { margin-left: auto; background: #7c3aed; color: white;
+      &.active { background: rgba(5,150,105,0.3); color: #a7f3d0; }
+      .badge { margin-left: auto; background: #059669; color: white;
         border-radius: 99px; padding: 1px 8px; font-size: 0.75rem; }
     }
     .main-content { flex: 1; padding: 2rem; overflow-y: auto; }
@@ -348,17 +409,17 @@ import { environment } from '../../../../environments/environment';
     .tab-header {
       display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;
       h2 { display: flex; align-items: center; gap: 0.5rem; font-size: 1.5rem;
-        color: #1a1033; margin: 0; mat-icon { color: #7c3aed; } }
+        color: #064e3b; margin: 0; mat-icon { color: #059669; } }
     }
     .loading { display: flex; justify-content: center; padding: 3rem; }
     .empty-state { text-align: center; padding: 4rem;
-      mat-icon { font-size: 3.5rem; width: 3.5rem; height: 3.5rem; color: #7c3aed; }
+      mat-icon { font-size: 3.5rem; width: 3.5rem; height: 3.5rem; color: #059669; }
       h3 { color: #374151; } p { color: #6b7280; margin-bottom: 1.5rem; } }
     .notification-card {
       display: flex; gap: 1rem; background: white; border-radius: 12px;
       padding: 1.25rem; margin-bottom: 1rem; border-left: 4px solid #10b981;
       animation: slideIn 0.4s ease;
-      &.first { border-left-color: #7c3aed; }
+      &.first { border-left-color: #059669; }
       .notif-icon { font-size: 2rem; }
       .notif-body { flex: 1; }
       .notif-header { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
@@ -369,14 +430,49 @@ import { environment } from '../../../../environments/environment';
     .orders-table { width: 100%; }
     .small-text { font-size: 0.8rem; color: #9ca3af; }
     .status-chip { padding: 3px 12px; border-radius: 99px; font-size: 0.8rem; font-weight: 600; }
-    .item-chip { display: inline-block; background: #f3e8ff; color: #7c3aed;
+    .item-chip { display: inline-block; background: #d1fae5; color: #059669;
       font-size: 0.75rem; padding: 2px 8px; border-radius: 99px; margin: 2px; }
     .empty-table { text-align: center; padding: 2rem; color: #6b7280; }
+
+    /* Panel de edición */
+    .edit-panel {
+      background: white; border-radius: 16px; padding: 1.5rem;
+      margin-bottom: 1.5rem; border: 2px solid #10b981;
+      box-shadow: 0 4px 20px rgba(16,185,129,0.15);
+      animation: slideIn 0.3s ease;
+    }
+    .edit-panel-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem;
+      h3 { display: flex; align-items: center; gap: 0.5rem; margin: 0;
+        color: #064e3b; font-size: 1.1rem;
+        mat-icon { color: #059669; } }
+    }
+    .edit-form {
+      display: grid; grid-template-columns: 160px 1fr; gap: 1.5rem;
+    }
+    .edit-preview {
+      img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 12px; }
+    }
+    .edit-fields { display: flex; flex-direction: column; gap: 0.5rem;
+      mat-form-field { width: 100%; }
+    }
+    .edit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .edit-actions {
+      display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem;
+    }
+    .save-edit-btn {
+      background: linear-gradient(135deg, #059669, #10b981) !important;
+      color: white !important; display: flex; align-items: center; gap: 0.5rem;
+      height: 44px; padding: 0 1.5rem;
+    }
 
     .products-grid-admin {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;
     }
-    .product-admin-card { border-radius: 12px !important; overflow: hidden; }
+    .product-admin-card { border-radius: 12px !important; overflow: hidden;
+      transition: box-shadow 0.2s;
+      &.editing { box-shadow: 0 0 0 2px #10b981 !important; }
+    }
     .product-admin-img {
       position: relative; height: 160px; background: #f3f4f6;
       img { width: 100%; height: 100%; object-fit: cover; }
@@ -390,20 +486,20 @@ import { environment } from '../../../../environments/environment';
     .product-admin-info { padding: 0.75rem 1rem !important;
       .admin-brand { font-size: 0.75rem; color: #9ca3af; text-transform: uppercase; margin: 0; }
       .admin-name { font-size: 0.9rem; font-weight: 600; margin: 0.25rem 0; }
-      .admin-price { color: #7c3aed; font-weight: 700; margin: 0; }
+      .admin-price { color: #059669; font-weight: 700; margin: 0; }
       .admin-size { font-size: 0.8rem; color: #6b7280; margin: 0.25rem 0 0; }
     }
-    .product-admin-actions { display: flex; justify-content: flex-end; padding: 0 0.5rem 0.5rem; }
+    .product-admin-actions { display: flex; justify-content: flex-end; gap: 0.25rem; padding: 0 0.5rem 0.5rem; }
 
     .upload-layout { display: grid; grid-template-columns: 280px 1fr; gap: 2rem; }
     .image-zone { display: flex; flex-direction: column; gap: 0.75rem; }
     .drop-area {
-      width: 100%; aspect-ratio: 1; border: 2px dashed #c4b5fd; border-radius: 12px;
+      width: 100%; aspect-ratio: 1; border: 2px dashed #a7f3d0; border-radius: 12px;
       display: flex; align-items: center; justify-content: center; cursor: pointer;
-      background: #faf5ff; transition: all 0.2s; overflow: hidden;
-      &:hover { border-color: #7c3aed; background: #f3e8ff; }
+      background: #f0fdf4; transition: all 0.2s; overflow: hidden;
+      &:hover { border-color: #059669; background: #d1fae5; }
       .drop-placeholder { text-align: center; color: #9ca3af;
-        mat-icon { font-size: 3rem; width: 3rem; height: 3rem; color: #c4b5fd; }
+        mat-icon { font-size: 3rem; width: 3rem; height: 3rem; color: #a7f3d0; }
         p { margin: 0.5rem 0 0.25rem; font-weight: 500; }
         small { font-size: 0.75rem; }
       }
@@ -428,10 +524,13 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   isConnected = false;
   isUploading = false;
   isLoadingProducts = false;
+  isSavingEdit = false;
+  editingProduct: Product | null = null;
   notifications: SaleNotification[] = [];
   recentOrders: Order[] = [];
   allProducts: Product[] = [];
   productForm: FormGroup;
+  editForm: FormGroup;
   selectedFile: File | null = null;
   previewUrl: string | null = null;
   categories: any[] = [];
@@ -454,6 +553,16 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       brand:       [''],
       condition:   ['GOOD', Validators.required],
       categoryId:  ['', Validators.required],
+    });
+
+    this.editForm = this.fb.group({
+      name:        ['', Validators.required],
+      description: ['', Validators.required],
+      price:       ['', [Validators.required, Validators.min(1000)]],
+      stock:       [1, Validators.required],
+      brand:       [''],
+      size:        [''],
+      condition:   ['GOOD', Validators.required],
     });
   }
 
@@ -504,6 +613,47 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     );
   }
 
+  openEditProduct(product: Product): void {
+    this.editingProduct = product;
+    this.editForm.patchValue({
+      name:        product.name,
+      description: product.description || '',
+      price:       product.price,
+      stock:       product.stock,
+      brand:       product.brand || '',
+      size:        product.size || '',
+      condition:   product.condition,
+    });
+    setTimeout(() => {
+      document.querySelector('.edit-panel')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  }
+
+  cancelEdit(): void {
+    this.editingProduct = null;
+    this.editForm.reset();
+  }
+
+  saveEdit(): void {
+    if (this.editForm.invalid || !this.editingProduct) return;
+    this.isSavingEdit = true;
+    this.subs.add(
+      this.http.put(`${environment.apiUrl}/products/${this.editingProduct.id}`, this.editForm.value).subscribe({
+        next: () => {
+          this.isSavingEdit = false;
+          this.snackBar.open('✅ Producto actualizado correctamente', 'OK', { duration: 3000 });
+          this.editingProduct = null;
+          this.editForm.reset();
+          this.loadProducts();
+        },
+        error: () => {
+          this.isSavingEdit = false;
+          this.snackBar.open('Error al actualizar', 'OK', { duration: 3000 });
+        },
+      })
+    );
+  }
+
   deleteProduct(id: string): void {
     if (!confirm('¿Estás seguro de eliminar este producto?')) return;
     this.subs.add(
@@ -532,30 +682,30 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   markAsDelivered(orderId: string): void {
-  if (!confirm('¿Marcar esta orden como entregada?')) return;
-  this.subs.add(
-    this.http.patch(`${environment.apiUrl}/orders/${orderId}/deliver`, {}).subscribe({
-      next: () => {
-        this.snackBar.open('✅ Orden marcada como entregada', 'OK', { duration: 3000 });
-        this.loadOrders();
-      },
-      error: () => this.snackBar.open('Error al actualizar', 'OK', { duration: 3000 }),
-    })
-  );
-}
+    if (!confirm('¿Marcar esta orden como entregada?')) return;
+    this.subs.add(
+      this.http.patch(`${environment.apiUrl}/orders/${orderId}/deliver`, {}).subscribe({
+        next: () => {
+          this.snackBar.open('✅ Orden marcada como entregada', 'OK', { duration: 3000 });
+          this.loadOrders();
+        },
+        error: () => this.snackBar.open('Error al actualizar', 'OK', { duration: 3000 }),
+      })
+    );
+  }
 
-markAsCancelled(orderId: string): void {
-  if (!confirm('¿Cancelar esta orden? Esta acción no se puede deshacer.')) return;
-  this.subs.add(
-    this.http.patch(`${environment.apiUrl}/orders/${orderId}/cancel`, {}).subscribe({
-      next: () => {
-        this.snackBar.open('Orden cancelada', 'OK', { duration: 3000 });
-        this.loadOrders();
-      },
-      error: () => this.snackBar.open('Error al cancelar', 'OK', { duration: 3000 }),
-    })
-  );
-}
+  markAsCancelled(orderId: string): void {
+    if (!confirm('¿Cancelar esta orden? Esta acción no se puede deshacer.')) return;
+    this.subs.add(
+      this.http.patch(`${environment.apiUrl}/orders/${orderId}/cancel`, {}).subscribe({
+        next: () => {
+          this.snackBar.open('Orden cancelada', 'OK', { duration: 3000 });
+          this.loadOrders();
+        },
+        error: () => this.snackBar.open('Error al cancelar', 'OK', { duration: 3000 }),
+      })
+    );
+  }
 
   sendTestNotification(): void { this.notificationsService.testNotification(); }
 
@@ -570,42 +720,40 @@ markAsCancelled(orderId: string): void {
   }
 
   onSubmitProduct(): void {
-  if (this.productForm.invalid) { this.productForm.markAllAsTouched(); return; }
-  if (!this.selectedFile) {
-    this.snackBar.open('Selecciona una imagen del producto', 'OK', { duration: 3000 }); return;
+    if (this.productForm.invalid) { this.productForm.markAllAsTouched(); return; }
+    if (!this.selectedFile) {
+      this.snackBar.open('Selecciona una imagen del producto', 'OK', { duration: 3000 }); return;
+    }
+    this.isUploading = true;
+    const formData = new FormData();
+    formData.append('image', this.selectedFile);
+    const values = this.productForm.value;
+    formData.append('name', values.name);
+    formData.append('description', values.description);
+    formData.append('price', Number(values.price).toString());
+    formData.append('stock', Number(values.stock).toString());
+    formData.append('brand', values.brand || '');
+    formData.append('size', values.size || '');
+    formData.append('condition', values.condition);
+    formData.append('categoryId', values.categoryId);
+    this.subs.add(
+      this.productsService.createProductWithImage(formData).subscribe({
+        next: (res) => {
+          this.isUploading = false;
+          this.snackBar.open(`✅ "${res.product.name}" publicado exitosamente`, 'OK', { duration: 4000 });
+          this.productForm.reset({ stock: 1, condition: 'GOOD' });
+          this.selectedFile = null;
+          this.previewUrl = null;
+          this.activeTab = 'products';
+          this.loadProducts();
+        },
+        error: (err) => {
+          this.isUploading = false;
+          this.snackBar.open(err.error?.message || 'Error al publicar', 'Cerrar', { duration: 5000 });
+        },
+      })
+    );
   }
-  this.isUploading = true;
-  const formData = new FormData();
-  formData.append('image', this.selectedFile);
-
-  const values = this.productForm.value;
-  formData.append('name', values.name);
-  formData.append('description', values.description);
-  formData.append('price', Number(values.price).toString());
-  formData.append('stock', Number(values.stock).toString());
-  formData.append('brand', values.brand || '');
-  formData.append('size', values.size || '');
-  formData.append('condition', values.condition);
-  formData.append('categoryId', values.categoryId);
-
-  this.subs.add(
-    this.productsService.createProductWithImage(formData).subscribe({
-      next: (res) => {
-        this.isUploading = false;
-        this.snackBar.open(`✅ "${res.product.name}" publicado exitosamente`, 'OK', { duration: 4000 });
-        this.productForm.reset({ stock: 1, condition: 'GOOD' });
-        this.selectedFile = null;
-        this.previewUrl = null;
-        this.activeTab = 'products';
-        this.loadProducts();
-      },
-      error: (err) => {
-        this.isUploading = false;
-        this.snackBar.open(err.error?.message || 'Error al publicar', 'Cerrar', { duration: 5000 });
-      },
-    })
-  );
-}
 
   formatPrice(price: number): string {
     return new Intl.NumberFormat('es-CO', {

@@ -19,8 +19,23 @@ export class UsersRepository {
   }
 
   async findAll(): Promise<User[]> {
-    return this.prisma.user.findMany({
-      orderBy: { createdAt: 'desc' },
+    return this.prisma.user.findMany({ orderBy: { createdAt: 'desc' } });
+  }
+
+  async updateProfile(id: string, data: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    city?: string;
+  }): Promise<User> {
+    return this.prisma.user.update({ where: { id }, data });
+  }
+
+  async updatePassword(id: string, hashedPassword: string): Promise<User> {
+    return this.prisma.user.update({
+      where: { id },
+      data: { password: hashedPassword },
     });
   }
 }
