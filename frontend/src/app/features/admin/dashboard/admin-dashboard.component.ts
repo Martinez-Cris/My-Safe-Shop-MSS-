@@ -1,6 +1,6 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -12,6 +12,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatDialog, MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { HttpClient } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 import { ProductsService } from '../../../core/services/products.service';
@@ -19,6 +20,67 @@ import { NotificationsService } from '../../../core/services/notifications.servi
 import { SaleNotification, Order, Product } from '../../../core/models/product.model';
 import { environment } from '../../../../environments/environment';
 
+// ══════════════════════════════════════════════════════════
+// 1. MODAL DE NÚMERO DE GUÍA (va ANTES del dashboard)
+// ══════════════════════════════════════════════════════════
+@Component({
+  selector: 'app-tracking-dialog',
+  standalone: true,
+  imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule,
+            MatFormFieldModule, MatInputModule, FormsModule],
+  template: `
+    <div class="tracking-dialog">
+      <div class="dialog-header">
+        <mat-icon>local_shipping</mat-icon>
+        <h2>Registrar envío</h2>
+      </div>
+      <p class="dialog-subtitle">Ingresa el número de guía para marcar el pedido como enviado</p>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Número de seguimiento</mat-label>
+        <input matInput [(ngModel)]="trackingNumber"
+          placeholder="Ej: 1Z999AA10123456784"
+          (keydown.enter)="confirm()">
+        <mat-icon matSuffix>pin</mat-icon>
+      </mat-form-field>
+      <div class="dialog-actions">
+        <button mat-stroked-button (click)="cancel()">Cancelar</button>
+        <button mat-raised-button color="primary"
+          [disabled]="!trackingNumber.trim()"
+          (click)="confirm()">
+          <mat-icon>send</mat-icon> Confirmar envío
+        </button>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .tracking-dialog { padding: 1.5rem; width: 380px; }
+    .dialog-header {
+      display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;
+      mat-icon { color: #059669; font-size: 2rem; width: 2rem; height: 2rem; }
+      h2 { margin: 0; color: #064e3b; font-size: 1.25rem; }
+    }
+    .dialog-subtitle { color: #6b7280; margin: 0 0 1.25rem; font-size: 0.9rem; }
+    .full-width { width: 100%; }
+    .dialog-actions {
+      display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem;
+    }
+  `]
+})
+export class TrackingDialogComponent {
+  trackingNumber = '';
+  constructor(
+    private dialogRef: MatDialogRef<TrackingDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: any
+  ) {}
+  confirm() {
+    if (this.trackingNumber.trim()) this.dialogRef.close(this.trackingNumber.trim());
+  }
+  cancel() { this.dialogRef.close(null); }
+}
+
+// ══════════════════════════════════════════════════════════
+// 2. COMPONENTE PRINCIPAL DEL DASHBOARD
+// ══════════════════════════════════════════════════════════
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
@@ -26,7 +88,7 @@ import { environment } from '../../../../environments/environment';
     CommonModule, ReactiveFormsModule, MatCardModule, MatButtonModule,
     MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule,
     MatTableModule, MatProgressSpinnerModule, MatSnackBarModule,
-    MatChipsModule, MatSlideToggleModule,
+    MatChipsModule, MatSlideToggleModule, MatDialogModule,
   ],
   template: `
     <div class="admin-layout">
@@ -433,8 +495,6 @@ import { environment } from '../../../../environments/environment';
     .item-chip { display: inline-block; background: #d1fae5; color: #059669;
       font-size: 0.75rem; padding: 2px 8px; border-radius: 99px; margin: 2px; }
     .empty-table { text-align: center; padding: 2rem; color: #6b7280; }
-
-    /* Panel de edición */
     .edit-panel {
       background: white; border-radius: 16px; padding: 1.5rem;
       margin-bottom: 1.5rem; border: 2px solid #10b981;
@@ -447,32 +507,22 @@ import { environment } from '../../../../environments/environment';
         color: #064e3b; font-size: 1.1rem;
         mat-icon { color: #059669; } }
     }
-    .edit-form {
-      display: grid; grid-template-columns: 160px 1fr; gap: 1.5rem;
-    }
-    .edit-preview {
-      img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 12px; }
-    }
+    .edit-form { display: grid; grid-template-columns: 160px 1fr; gap: 1.5rem; }
+    .edit-preview { img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 12px; } }
     .edit-fields { display: flex; flex-direction: column; gap: 0.5rem;
-      mat-form-field { width: 100%; }
-    }
+      mat-form-field { width: 100%; } }
     .edit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-    .edit-actions {
-      display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem;
-    }
+    .edit-actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem; }
     .save-edit-btn {
       background: linear-gradient(135deg, #059669, #10b981) !important;
       color: white !important; display: flex; align-items: center; gap: 0.5rem;
       height: 44px; padding: 0 1.5rem;
     }
-
     .products-grid-admin {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;
     }
-    .product-admin-card { border-radius: 12px !important; overflow: hidden;
-      transition: box-shadow 0.2s;
-      &.editing { box-shadow: 0 0 0 2px #10b981 !important; }
-    }
+    .product-admin-card { border-radius: 12px !important; overflow: hidden; transition: box-shadow 0.2s;
+      &.editing { box-shadow: 0 0 0 2px #10b981 !important; } }
     .product-admin-img {
       position: relative; height: 160px; background: #f3f4f6;
       img { width: 100%; height: 100%; object-fit: cover; }
@@ -490,7 +540,6 @@ import { environment } from '../../../../environments/environment';
       .admin-size { font-size: 0.8rem; color: #6b7280; margin: 0.25rem 0 0; }
     }
     .product-admin-actions { display: flex; justify-content: flex-end; gap: 0.25rem; padding: 0 0.5rem 0.5rem; }
-
     .upload-layout { display: grid; grid-template-columns: 280px 1fr; gap: 2rem; }
     .image-zone { display: flex; flex-direction: column; gap: 0.75rem; }
     .drop-area {
@@ -512,8 +561,7 @@ import { environment } from '../../../../environments/environment';
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
     .submit-btn {
       height: 52px; font-size: 1rem; font-weight: 700;
-      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-      margin-top: 0.5rem;
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 0.5rem;
     }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
     @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
@@ -543,6 +591,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     private notificationsService: NotificationsService,
     private http: HttpClient,
     private snackBar: MatSnackBar,
+    private dialog: MatDialog,
   ) {
     this.productForm = this.fb.group({
       name:        ['', Validators.required],
@@ -668,17 +717,22 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   markAsShipped(orderId: string): void {
-    const tracking = prompt('Ingresa el número de seguimiento:');
-    if (!tracking) return;
-    this.subs.add(
-      this.http.patch(`${environment.apiUrl}/orders/${orderId}/ship`, { trackingNumber: tracking }).subscribe({
-        next: () => {
-          this.snackBar.open('Orden marcada como enviada', 'OK', { duration: 3000 });
-          this.loadOrders();
-        },
-        error: () => this.snackBar.open('Error al actualizar', 'OK', { duration: 3000 }),
-      })
-    );
+    const ref = this.dialog.open(TrackingDialogComponent, {
+      width: '420px',
+      disableClose: true,
+    });
+    ref.afterClosed().subscribe(trackingNumber => {
+      if (!trackingNumber) return;
+      this.subs.add(
+        this.http.patch(`${environment.apiUrl}/orders/${orderId}/ship`, { trackingNumber }).subscribe({
+          next: () => {
+            this.snackBar.open('📦 Orden marcada como enviada', 'OK', { duration: 3000 });
+            this.loadOrders();
+          },
+          error: () => this.snackBar.open('Error al actualizar', 'OK', { duration: 3000 }),
+        })
+      );
+    });
   }
 
   markAsDelivered(orderId: string): void {

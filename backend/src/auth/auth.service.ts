@@ -13,6 +13,7 @@ export interface JwtPayload {
 
 @Injectable()
 export class AuthService {
+  //Datos encapsulados - nadie accede directamente a las dependencias, solo a través de los métodos del servicio
   constructor(
     private readonly usersRepository: UsersRepository,
     private readonly jwtService: JwtService,
@@ -34,6 +35,7 @@ export class AuthService {
     return { user: this.sanitizeUser(user), token };
   }
 
+  // Metodo publico - se encarga de autenticar al usuario y generar un token JWT para sesiones futuras
   async login(data: { email: string; password: string }) {
     const user = await this.usersRepository.findByEmail(data.email);
     if (!user) throw new UnauthorizedException('Credenciales incorrectas');
@@ -74,6 +76,7 @@ export class AuthService {
     return { message: 'Contraseña actualizada correctamente' };
   }
 
+  // Método privado - genera un token JWT con la información del usuario para autenticación
   private generateToken(user: any): string {
     const payload: JwtPayload = {
       sub: user.id,

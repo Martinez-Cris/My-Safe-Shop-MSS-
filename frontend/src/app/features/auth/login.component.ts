@@ -66,7 +66,7 @@ import { AuthService } from '../../core/services/auth.service';
 
                 <div class="admin-hint">
                   <mat-icon>admin_panel_settings</mat-icon>
-                  Admin: admin&#64;mysafeshop.com / admin123
+                 
                 </div>
               </form>
             </mat-tab>

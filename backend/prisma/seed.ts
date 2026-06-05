@@ -1,9 +1,26 @@
-import { PrismaClient, Condition } from '@prisma/client';
+import { PrismaClient, Condition, Role } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('Iniciando seed de MY SAFE SHOP...');
+
+// Pega esto entre el console.log y el const [abrigos, vestidos...]
+const hashedPassword = await bcrypt.hash('admin123', 10);
+await prisma.user.upsert({
+  where: { email: 'admin@mysafeshop.com' },
+  update: {},
+  create: {
+    name: 'Administrador',
+    email: 'admin@mysafeshop.com',
+    password: hashedPassword,
+    role: Role.ADMIN,
+    phone: '+57 300 000 0000',
+    city: 'Bogotá',
+  },
+});
+console.log('Admin creado: admin@mysafeshop.com / admin123');
 
   const [abrigos, vestidos, jeans, zapatos, accesorios] = await Promise.all([
     prisma.category.upsert({ where: { slug: 'abrigos' }, update: {}, create: { name: 'Abrigos & Chaquetas', slug: 'abrigos', description: 'Prendas de abrigo de segunda mano' } }),

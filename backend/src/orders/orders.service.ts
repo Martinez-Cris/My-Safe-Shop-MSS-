@@ -82,9 +82,21 @@ export class OrdersService {
     });
   }
     async markAsDelivered(id: string) {
-  await this.findOne(id);
+  const order = await this.findOne(id);
+
+  for (const item of (order as any).items) {
+    const updated = await this.productsRepository.decrementStock(item.productId, item.quantity);
+    if (updated.stock <= 0) {
+      await this.productsRepository.update(item.productId, {
+        stock: 0,
+        isActive: false,
+      });
+    }
+  }
+
   return this.ordersRepository.updateStatus(id, OrderStatus.DELIVERED);
 }
+
 
 async markAsCancelled(id: string) {
   await this.findOne(id);
