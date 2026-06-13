@@ -1,9 +1,8 @@
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
-
 
 export interface User {
   id: string;
@@ -21,6 +20,9 @@ export interface AuthResponse {
   token: string;
 }
 
+const INACTIVITY_LIMIT = 10 * 1000; // 10 segundos en ms
+const ACTIVITY_EVENTS = ['click', 'keydown', 'mousemove', 'scroll', 'touchstart'];
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly apiUrl = `${environment.apiUrl}/auth`;
@@ -30,7 +32,13 @@ export class AuthService {
   readonly user$ = this.currentUser$.asObservable();
   readonly isLoggedIn$ = new BehaviorSubject<boolean>(false);
 
-  constructor(private http: HttpClient, private router: Router) {
+  private inactivityTimer: any = null;
+
+  constructor(
+    private http: HttpClient,
+    private router: Router,
+    private ngZone: NgZone,
+  ) {
     this.loadFromStorage();
   }
 
@@ -41,6 +49,7 @@ export class AuthService {
       this.token$.next(token);
       this.currentUser$.next(JSON.parse(user));
       this.isLoggedIn$.next(true);
+      this.startInactivityWatcher();
     }
   }
 
@@ -56,13 +65,21 @@ export class AuthService {
     );
   }
 
-  logout(): void {
+  logout(reason?: 'inactivity' | 'unauthorized'): void {
+    this.stopInactivityWatcher();
     localStorage.removeItem('mss_token');
     localStorage.removeItem('mss_user');
     this.currentUser$.next(null);
     this.token$.next(null);
     this.isLoggedIn$.next(false);
-    this.router.navigate(['/login']);
+
+    if (reason === 'inactivity') {
+      this.router.navigate(['/login'], {
+        queryParams: { reason: 'inactivity' }
+      });
+    } else {
+      this.router.navigate(['/login']);
+    }
   }
 
   getToken(): string | null {
@@ -81,11 +98,44 @@ export class AuthService {
     return this.isLoggedIn$.value;
   }
 
+  // ── Inactividad ──────────────────────────────────────────
+
+  private startInactivityWatcher(): void {
+    this.ngZone.runOutsideAngular(() => {
+      ACTIVITY_EVENTS.forEach(event => {
+        window.addEventListener(event, this.resetInactivityTimer, { passive: true });
+      });
+    });
+    this.resetInactivityTimer();
+  }
+
+  private stopInactivityWatcher(): void {
+    ACTIVITY_EVENTS.forEach(event => {
+      window.removeEventListener(event, this.resetInactivityTimer);
+    });
+    if (this.inactivityTimer) {
+      clearTimeout(this.inactivityTimer);
+      this.inactivityTimer = null;
+    }
+  }
+
+  private resetInactivityTimer = (): void => {
+    if (this.inactivityTimer) clearTimeout(this.inactivityTimer);
+    this.inactivityTimer = setTimeout(() => {
+      this.ngZone.run(() => {
+        if (this.isLoggedIn$.value) {
+          this.logout('inactivity');
+        }
+      });
+    }, INACTIVITY_LIMIT);
+  };
+
   private saveSession(res: AuthResponse): void {
     localStorage.setItem('mss_token', res.token);
     localStorage.setItem('mss_user', JSON.stringify(res.user));
     this.token$.next(res.token);
     this.currentUser$.next(res.user);
     this.isLoggedIn$.next(true);
+    this.startInactivityWatcher();
   }
-} 
+}
