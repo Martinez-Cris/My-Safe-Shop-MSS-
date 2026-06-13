@@ -2,21 +2,19 @@ import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/
 import { JwtService } from '@nestjs/jwt';
 import { UsersRepository } from './users.repository';
 import * as bcrypt from 'bcrypt';
-import { Role } from '@prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from './email.service';
 import * as crypto from 'crypto';
 
 export interface JwtPayload {
   sub: string;
   email: string;
-  role: Role;
+  role: string;
   name: string;
 }
 
 @Injectable()
 export class AuthService {
-  //Datos encapsulados - nadie accede directamente a las dependencias, solo a través de los métodos del servicio
   constructor(
     private readonly usersRepository: UsersRepository,
     private readonly jwtService: JwtService,
@@ -33,14 +31,13 @@ export class AuthService {
       name: data.name,
       email: data.email,
       password: hashedPassword,
-      role: Role.CLIENT,
+      role: 'CLIENT',
     });
 
     const token = this.generateToken(user);
     return { user: this.sanitizeUser(user), token };
   }
 
-  // Metodo publico - se encarga de autenticar al usuario y generar un token JWT para sesiones futuras
   async login(data: { email: string; password: string }) {
     const user = await this.usersRepository.findByEmail(data.email);
     if (!user) throw new UnauthorizedException('Credenciales incorrectas');
@@ -81,7 +78,6 @@ export class AuthService {
     return { message: 'Contraseña actualizada correctamente' };
   }
 
-  // Método privado - genera un token JWT con la información del usuario para autenticación
   private generateToken(user: any): string {
     const payload: JwtPayload = {
       sub: user.id,
@@ -96,41 +92,41 @@ export class AuthService {
     const { password, ...rest } = user;
     return rest;
   }
+
   async forgotPassword(email: string) {
-  const user = await this.usersRepository.findByEmail(email);
-  // Siempre responde igual para no revelar si el email existe
-  if (!user) return { message: 'Si el correo existe, recibirás un enlace en breve.' };
+    const user = await this.usersRepository.findByEmail(email);
+    if (!user) return { message: 'Si el correo existe, recibirás un enlace en breve.' };
 
-  const token = crypto.randomUUID();
-  const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutos
+    const token = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
 
-  await this.prisma.passwordResetToken.create({
-    data: { token, email, expiresAt },
-  });
+    await this.prisma.passwordResetToken.create({
+      data: { token, email, expiresAt },
+    });
 
-  await this.emailService.sendPasswordReset(email, token);
-  return { message: 'Si el correo existe, recibirás un enlace en breve.' };
-}
-
-async resetPassword(token: string, newPassword: string) {
-  const record = await this.prisma.passwordResetToken.findUnique({
-    where: { token },
-  });
-
-  if (!record || record.used || record.expiresAt < new Date()) {
-    throw new BadRequestException('El enlace es inválido o ha expirado.');
+    await this.emailService.sendPasswordReset(email, token);
+    return { message: 'Si el correo existe, recibirás un enlace en breve.' };
   }
 
-  const hashed = await bcrypt.hash(newPassword, 10);
-  const user = await this.usersRepository.findByEmail(record.email);
-  if (!user) throw new BadRequestException('Usuario no encontrado.');
+  async resetPassword(token: string, newPassword: string) {
+    const record = await this.prisma.passwordResetToken.findUnique({
+      where: { token },
+    });
 
-  await this.usersRepository.updatePassword(user.id, hashed);
-  await this.prisma.passwordResetToken.update({
-    where: { token },
-    data: { used: true },
-  });
+    if (!record || record.used || record.expiresAt < new Date()) {
+      throw new BadRequestException('El enlace es inválido o ha expirado.');
+    }
 
-  return { message: 'Contraseña actualizada correctamente.' };
-}
+    const hashed = await bcrypt.hash(newPassword, 10);
+    const user = await this.usersRepository.findByEmail(record.email);
+    if (!user) throw new BadRequestException('Usuario no encontrado.');
+
+    await this.usersRepository.updatePassword(user.id, hashed);
+    await this.prisma.passwordResetToken.update({
+      where: { token },
+      data: { used: true },
+    });
+
+    return { message: 'Contraseña actualizada correctamente.' };
+  }
 }

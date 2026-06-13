@@ -2,7 +2,6 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { OrdersRepository } from './repositories/orders.repository';
 import { ProductsRepository } from '../products/repositories/products.repository';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { OrderStatus } from '@prisma/client';
 
 @Injectable()
 export class OrdersService {
@@ -34,7 +33,7 @@ export class OrdersService {
       buyerPhone: dto.buyerPhone,
       shippingAddress: dto.shippingAddress,
       total,
-      status: OrderStatus.PENDING,
+      status: 'PENDING',
       items: {
         create: itemsData.map(i => ({
           quantity: i.quantity,
@@ -64,7 +63,7 @@ export class OrdersService {
     for (const item of (order as any).items) {
       await this.productsRepository.decrementStock(item.productId, item.quantity);
     }
-    return this.ordersRepository.updateStatus(orderId, OrderStatus.PAID, {
+    return this.ordersRepository.updateStatus(orderId, 'PAID', {
       paymentIntentId,
       paymentConfirmedAt: new Date(),
     });
@@ -76,30 +75,30 @@ export class OrdersService {
 
   async markAsShipped(id: string, trackingNumber: string) {
     await this.findOne(id);
-    return this.ordersRepository.updateStatus(id, OrderStatus.SHIPPED, {
+    return this.ordersRepository.updateStatus(id, 'SHIPPED', {
       trackingNumber,
       shippedAt: new Date(),
     });
   }
-    async markAsDelivered(id: string) {
-  const order = await this.findOne(id);
 
-  for (const item of (order as any).items) {
-    const updated = await this.productsRepository.decrementStock(item.productId, item.quantity);
-    if (updated.stock <= 0) {
-      await this.productsRepository.update(item.productId, {
-        stock: 0,
-        isActive: false,
-      });
+  async markAsDelivered(id: string) {
+    const order = await this.findOne(id);
+
+    for (const item of (order as any).items) {
+      const updated = await this.productsRepository.decrementStock(item.productId, item.quantity);
+      if (updated.stock <= 0) {
+        await this.productsRepository.update(item.productId, {
+          stock: 0,
+          isActive: false,
+        });
+      }
     }
+
+    return this.ordersRepository.updateStatus(id, 'DELIVERED');
   }
 
-  return this.ordersRepository.updateStatus(id, OrderStatus.DELIVERED);
-}
-
-
-async markAsCancelled(id: string) {
-  await this.findOne(id);
-  return this.ordersRepository.updateStatus(id, OrderStatus.CANCELLED);
-}
+  async markAsCancelled(id: string) {
+    await this.findOne(id);
+    return this.ordersRepository.updateStatus(id, 'CANCELLED');
+  }
 }

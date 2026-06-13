@@ -1,6 +1,5 @@
-import { IsString, IsNumber, IsOptional, IsEnum, IsPositive, IsInt, Min } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsPositive, IsInt, Min } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { Condition } from '@prisma/client';
 
 export class CreateProductDto {
   @IsString() name: string;
@@ -14,7 +13,7 @@ export class CreateProductDto {
 
   @IsString() @IsOptional() size?: string;
   @IsString() @IsOptional() brand?: string;
-  @IsEnum(Condition) @IsOptional() condition?: Condition;
+  @IsString() @IsOptional() condition?: string;
   @IsString() @IsOptional() imageUrl?: string;
   @IsString() @IsOptional() cloudinaryPublicId?: string;
   @IsString() categoryId: string;

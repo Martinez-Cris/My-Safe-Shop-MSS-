@@ -13,6 +13,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatDialog, MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { HttpClient } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 import { ProductsService } from '../../../core/services/products.service';
@@ -21,7 +22,7 @@ import { SaleNotification, Order, Product } from '../../../core/models/product.m
 import { environment } from '../../../../environments/environment';
 
 // ══════════════════════════════════════════════════════════
-// 1. MODAL DE NÚMERO DE GUÍA (va ANTES del dashboard)
+// 1. MODAL DE NÚMERO DE GUÍA
 // ══════════════════════════════════════════════════════════
 @Component({
   selector: 'app-tracking-dialog',
@@ -61,9 +62,7 @@ import { environment } from '../../../../environments/environment';
     }
     .dialog-subtitle { color: #6b7280; margin: 0 0 1.25rem; font-size: 0.9rem; }
     .full-width { width: 100%; }
-    .dialog-actions {
-      display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem;
-    }
+    .dialog-actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem; }
   `]
 })
 export class TrackingDialogComponent {
@@ -72,9 +71,7 @@ export class TrackingDialogComponent {
     private dialogRef: MatDialogRef<TrackingDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: any
   ) {}
-  confirm() {
-    if (this.trackingNumber.trim()) this.dialogRef.close(this.trackingNumber.trim());
-  }
+  confirm() { if (this.trackingNumber.trim()) this.dialogRef.close(this.trackingNumber.trim()); }
   cancel() { this.dialogRef.close(null); }
 }
 
@@ -88,7 +85,7 @@ export class TrackingDialogComponent {
     CommonModule, ReactiveFormsModule, MatCardModule, MatButtonModule,
     MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule,
     MatTableModule, MatProgressSpinnerModule, MatSnackBarModule,
-    MatChipsModule, MatSlideToggleModule, MatDialogModule,
+    MatChipsModule, MatSlideToggleModule, MatDialogModule, MatTooltipModule,
   ],
   template: `
     <div class="admin-layout">
@@ -117,6 +114,10 @@ export class TrackingDialogComponent {
           <button class="nav-item" [class.active]="activeTab === 'products'"
             (click)="activeTab = 'products'; loadProducts()">
             <mat-icon>inventory_2</mat-icon><span>Productos</span>
+          </button>
+          <button class="nav-item" [class.active]="activeTab === 'inventory'"
+            (click)="activeTab = 'inventory'; loadInventory()">
+            <mat-icon>assessment</mat-icon><span>Inventario</span>
           </button>
           <button class="nav-item" [class.active]="activeTab === 'upload'"
             (click)="activeTab = 'upload'">
@@ -190,9 +191,10 @@ export class TrackingDialogComponent {
               <ng-container matColumnDef="items">
                 <th mat-header-cell *matHeaderCellDef>Productos</th>
                 <td mat-cell *matCellDef="let o">
-                  <span *ngFor="let item of o.items" class="item-chip">
-                    {{ item.product?.name | slice:0:20 }}
-                  </span>
+                  <div *ngFor="let item of o.items" class="item-row">
+                    <span class="item-chip">{{ item.product?.name | slice:0:20 }}</span>
+                    <span class="units-badge">{{ item.quantity }} ud{{ item.quantity > 1 ? 's' : '' }}</span>
+                  </div>
                 </td>
               </ng-container>
               <ng-container matColumnDef="date">
@@ -233,14 +235,10 @@ export class TrackingDialogComponent {
 
         <!-- ══ Productos publicados ══ -->
         <div *ngIf="activeTab === 'products'" class="tab-content">
-
-          <!-- Panel de edición -->
           <div *ngIf="editingProduct" class="edit-panel">
             <div class="edit-panel-header">
               <h3><mat-icon>edit</mat-icon> Editando: {{ editingProduct.name }}</h3>
-              <button mat-icon-button (click)="cancelEdit()">
-                <mat-icon>close</mat-icon>
-              </button>
+              <button mat-icon-button (click)="cancelEdit()"><mat-icon>close</mat-icon></button>
             </div>
             <form [formGroup]="editForm" (ngSubmit)="saveEdit()" class="edit-form">
               <div class="edit-preview">
@@ -287,11 +285,8 @@ export class TrackingDialogComponent {
                   </mat-select>
                 </mat-form-field>
                 <div class="edit-actions">
-                  <button mat-stroked-button type="button" (click)="cancelEdit()">
-                    Cancelar
-                  </button>
-                  <button mat-raised-button type="submit"
-                    class="save-edit-btn" [disabled]="isSavingEdit">
+                  <button mat-stroked-button type="button" (click)="cancelEdit()">Cancelar</button>
+                  <button mat-raised-button type="submit" class="save-edit-btn" [disabled]="isSavingEdit">
                     <mat-spinner *ngIf="isSavingEdit" diameter="18"></mat-spinner>
                     <mat-icon *ngIf="!isSavingEdit">save</mat-icon>
                     {{ isSavingEdit ? 'Guardando...' : 'Guardar Cambios' }}
@@ -300,24 +295,19 @@ export class TrackingDialogComponent {
               </div>
             </form>
           </div>
-
           <div class="tab-header">
             <h2><mat-icon>inventory_2</mat-icon> Productos Publicados</h2>
             <button mat-raised-button color="primary" (click)="activeTab = 'upload'">
               <mat-icon>add</mat-icon> Publicar nuevo
             </button>
           </div>
-          <div *ngIf="isLoadingProducts" class="loading">
-            <mat-spinner diameter="40"></mat-spinner>
-          </div>
+          <div *ngIf="isLoadingProducts" class="loading"><mat-spinner diameter="40"></mat-spinner></div>
           <div *ngIf="!isLoadingProducts" class="products-grid-admin">
             <mat-card *ngFor="let product of allProducts" class="product-admin-card"
               [class.editing]="editingProduct?.id === product.id">
               <div class="product-admin-img">
-                <img [src]="product.imageUrl || 'https://via.placeholder.com/200'"
-                  [alt]="product.name">
-                <span class="stock-pill" [class.low]="product.stock <= 1"
-                  [class.out]="product.stock === 0">
+                <img [src]="product.imageUrl || 'https://via.placeholder.com/200'" [alt]="product.name">
+                <span class="stock-pill" [class.low]="product.stock <= 1" [class.out]="product.stock === 0">
                   {{ product.stock === 0 ? 'Agotado' : product.stock + ' uds.' }}
                 </span>
               </div>
@@ -328,14 +318,10 @@ export class TrackingDialogComponent {
                 <p class="admin-size" *ngIf="product.size">Talla: {{ product.size }}</p>
               </mat-card-content>
               <mat-card-actions class="product-admin-actions">
-                <button mat-icon-button color="primary"
-                  (click)="openEditProduct(product)"
-                  matTooltip="Editar producto">
+                <button mat-icon-button color="primary" (click)="openEditProduct(product)" matTooltip="Editar">
                   <mat-icon>edit</mat-icon>
                 </button>
-                <button mat-icon-button color="warn"
-                  (click)="deleteProduct(product.id)"
-                  matTooltip="Eliminar producto">
+                <button mat-icon-button color="warn" (click)="deleteProduct(product.id)" matTooltip="Eliminar">
                   <mat-icon>delete</mat-icon>
                 </button>
               </mat-card-actions>
@@ -344,6 +330,114 @@ export class TrackingDialogComponent {
           <p *ngIf="!isLoadingProducts && allProducts.length === 0" class="empty-table">
             No hay productos publicados aún
           </p>
+        </div>
+
+        <!-- ══ Inventario ══ -->
+        <div *ngIf="activeTab === 'inventory'" class="tab-content">
+          <div class="tab-header">
+            <h2><mat-icon>assessment</mat-icon> Inventario</h2>
+            <button mat-icon-button (click)="loadInventory()"><mat-icon>refresh</mat-icon></button>
+          </div>
+
+          <!-- Métricas rápidas -->
+          <div class="inventory-metrics">
+            <div class="metric-card">
+              <mat-icon>inventory_2</mat-icon>
+              <div>
+                <span class="metric-value">{{ inventoryProducts.length }}</span>
+                <span class="metric-label">Total productos</span>
+              </div>
+            </div>
+            <div class="metric-card active">
+              <mat-icon>check_circle</mat-icon>
+              <div>
+                <span class="metric-value">{{ getActiveCount() }}</span>
+                <span class="metric-label">Disponibles</span>
+              </div>
+            </div>
+            <div class="metric-card warning">
+              <mat-icon>warning</mat-icon>
+              <div>
+                <span class="metric-value">{{ getLowStockCount() }}</span>
+                <span class="metric-label">Stock bajo (≤1)</span>
+              </div>
+            </div>
+            <div class="metric-card danger">
+              <mat-icon>remove_shopping_cart</mat-icon>
+              <div>
+                <span class="metric-value">{{ getOutOfStockCount() }}</span>
+                <span class="metric-label">Agotados</span>
+              </div>
+            </div>
+            <div class="metric-card total">
+              <mat-icon>attach_money</mat-icon>
+              <div>
+                <span class="metric-value">{{ formatPrice(getTotalInventoryValue()) }}</span>
+                <span class="metric-label">Valor total</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tabla de inventario -->
+          <div class="inventory-table-wrap" *ngIf="!isLoadingInventory">
+            <table mat-table [dataSource]="inventoryProducts" class="inventory-table">
+              <ng-container matColumnDef="product">
+                <th mat-header-cell *matHeaderCellDef>Producto</th>
+                <td mat-cell *matCellDef="let p">
+                  <div class="inv-product">
+                    <img [src]="p.imageUrl || 'https://via.placeholder.com/40'" [alt]="p.name">
+                    <div>
+                      <div class="inv-name">{{ p.name }}</div>
+                      <div class="inv-brand">{{ p.brand || '—' }}</div>
+                    </div>
+                  </div>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="category">
+                <th mat-header-cell *matHeaderCellDef>Categoría</th>
+                <td mat-cell *matCellDef="let p">{{ p.category?.name || '—' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="size">
+                <th mat-header-cell *matHeaderCellDef>Talla</th>
+                <td mat-cell *matCellDef="let p">{{ p.size || '—' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="condition">
+                <th mat-header-cell *matHeaderCellDef>Condición</th>
+                <td mat-cell *matCellDef="let p">
+                  <span class="condition-badge condition-{{ p.condition?.toLowerCase() }}">
+                    {{ getConditionLabel(p.condition) }}
+                  </span>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="price">
+                <th mat-header-cell *matHeaderCellDef>Precio</th>
+                <td mat-cell *matCellDef="let p"><strong>{{ formatPrice(p.price) }}</strong></td>
+              </ng-container>
+              <ng-container matColumnDef="stock">
+                <th mat-header-cell *matHeaderCellDef>Stock</th>
+                <td mat-cell *matCellDef="let p">
+                  <span class="stock-badge"
+                    [class.stock-ok]="p.stock > 1"
+                    [class.stock-low]="p.stock === 1"
+                    [class.stock-out]="p.stock === 0">
+                    {{ p.stock === 0 ? 'Agotado' : p.stock + ' uds.' }}
+                  </span>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef>Estado</th>
+                <td mat-cell *matCellDef="let p">
+                  <span class="status-badge-inv" [class.active]="p.isActive" [class.inactive]="!p.isActive">
+                    {{ p.isActive ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="inventoryColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: inventoryColumns;"></tr>
+            </table>
+            <p *ngIf="inventoryProducts.length === 0" class="empty-table">Sin productos en inventario</p>
+          </div>
+          <div *ngIf="isLoadingInventory" class="loading"><mat-spinner diameter="40"></mat-spinner></div>
         </div>
 
         <!-- ══ Publicar Producto ══ -->
@@ -361,10 +455,8 @@ export class TrackingDialogComponent {
                 </div>
                 <img *ngIf="previewUrl" [src]="previewUrl" class="preview-img">
               </div>
-              <input #fileInput type="file" accept="image/*" hidden
-                (change)="onFileSelected($event)">
-              <button mat-stroked-button *ngIf="previewUrl" (click)="fileInput.click()"
-                class="change-photo-btn">
+              <input #fileInput type="file" accept="image/*" hidden (change)="onFileSelected($event)">
+              <button mat-stroked-button *ngIf="previewUrl" (click)="fileInput.click()" class="change-photo-btn">
                 <mat-icon>swap_horiz</mat-icon> Cambiar foto
               </button>
             </div>
@@ -415,15 +507,12 @@ export class TrackingDialogComponent {
                 <mat-form-field appearance="outline">
                   <mat-label>Categoría</mat-label>
                   <mat-select formControlName="categoryId">
-                    <mat-option *ngFor="let cat of categories" [value]="cat.id">
-                      {{ cat.name }}
-                    </mat-option>
+                    <mat-option *ngFor="let cat of categories" [value]="cat.id">{{ cat.name }}</mat-option>
                   </mat-select>
                   <mat-error>Selecciona una categoría</mat-error>
                 </mat-form-field>
               </div>
-              <button mat-raised-button color="primary" type="submit"
-                [disabled]="isUploading" class="submit-btn">
+              <button mat-raised-button color="primary" type="submit" [disabled]="isUploading" class="submit-btn">
                 <mat-spinner *ngIf="isUploading" diameter="20"></mat-spinner>
                 <mat-icon *ngIf="!isUploading">publish</mat-icon>
                 {{ isUploading ? 'Publicando...' : 'Publicar Producto' }}
@@ -467,7 +556,7 @@ export class TrackingDialogComponent {
         border-radius: 99px; padding: 1px 8px; font-size: 0.75rem; }
     }
     .main-content { flex: 1; padding: 2rem; overflow-y: auto; }
-    .tab-content { max-width: 1000px; }
+    .tab-content { max-width: 1100px; }
     .tab-header {
       display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;
       h2 { display: flex; align-items: center; gap: 0.5rem; font-size: 1.5rem;
@@ -487,30 +576,75 @@ export class TrackingDialogComponent {
       .notif-header { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
       .total-amount { color: #10b981; font-size: 1.1rem; }
     }
+
+    /* Pedidos */
     .orders-table-wrap { background: white; border-radius: 12px; overflow: hidden;
       box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
     .orders-table { width: 100%; }
     .small-text { font-size: 0.8rem; color: #9ca3af; }
     .status-chip { padding: 3px 12px; border-radius: 99px; font-size: 0.8rem; font-weight: 600; }
+    .item-row { display: flex; align-items: center; gap: 0.4rem; margin: 2px 0; }
     .item-chip { display: inline-block; background: #d1fae5; color: #059669;
-      font-size: 0.75rem; padding: 2px 8px; border-radius: 99px; margin: 2px; }
+      font-size: 0.75rem; padding: 2px 8px; border-radius: 99px; }
+    .units-badge { display: inline-block; background: #dbeafe; color: #1e40af;
+      font-size: 0.7rem; font-weight: 700; padding: 1px 7px; border-radius: 99px; }
     .empty-table { text-align: center; padding: 2rem; color: #6b7280; }
+
+    /* Inventario — métricas */
+    .inventory-metrics {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 1rem; margin-bottom: 1.5rem;
+    }
+    .metric-card {
+      background: white; border-radius: 12px; padding: 1rem 1.25rem;
+      display: flex; align-items: center; gap: 0.75rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 4px solid #d1d5db;
+      mat-icon { font-size: 2rem; width: 2rem; height: 2rem; color: #9ca3af; }
+      .metric-value { display: block; font-size: 1.4rem; font-weight: 800; color: #064e3b; }
+      .metric-label { display: block; font-size: 0.75rem; color: #6b7280; }
+      &.active { border-left-color: #10b981; mat-icon { color: #10b981; } }
+      &.warning { border-left-color: #f59e0b; mat-icon { color: #f59e0b; } }
+      &.danger { border-left-color: #ef4444; mat-icon { color: #ef4444; } }
+      &.total { border-left-color: #6366f1; mat-icon { color: #6366f1; }
+        .metric-value { font-size: 1rem; } }
+    }
+
+    /* Inventario — tabla */
+    .inventory-table-wrap { background: white; border-radius: 12px; overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .inventory-table { width: 100%; }
+    .inv-product { display: flex; align-items: center; gap: 0.75rem;
+      img { width: 40px; height: 40px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
+      .inv-name { font-weight: 600; font-size: 0.9rem; }
+      .inv-brand { font-size: 0.75rem; color: #9ca3af; }
+    }
+    .condition-badge { padding: 2px 10px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; }
+    .condition-new { background: #d1fae5; color: #065f46; }
+    .condition-like_new { background: #dbeafe; color: #1e40af; }
+    .condition-good { background: #fef3c7; color: #d97706; }
+    .condition-fair { background: #fee2e2; color: #dc2626; }
+    .stock-badge { padding: 3px 10px; border-radius: 99px; font-size: 0.8rem; font-weight: 700; }
+    .stock-ok { background: #d1fae5; color: #065f46; }
+    .stock-low { background: #fef3c7; color: #d97706; }
+    .stock-out { background: #fee2e2; color: #dc2626; }
+    .status-badge-inv { padding: 3px 10px; border-radius: 99px; font-size: 0.8rem; font-weight: 600; }
+    .status-badge-inv.active { background: #d1fae5; color: #065f46; }
+    .status-badge-inv.inactive { background: #f3f4f6; color: #6b7280; }
+
+    /* Productos */
     .edit-panel {
       background: white; border-radius: 16px; padding: 1.5rem;
       margin-bottom: 1.5rem; border: 2px solid #10b981;
-      box-shadow: 0 4px 20px rgba(16,185,129,0.15);
-      animation: slideIn 0.3s ease;
+      box-shadow: 0 4px 20px rgba(16,185,129,0.15); animation: slideIn 0.3s ease;
     }
     .edit-panel-header {
       display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem;
-      h3 { display: flex; align-items: center; gap: 0.5rem; margin: 0;
-        color: #064e3b; font-size: 1.1rem;
+      h3 { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: #064e3b; font-size: 1.1rem;
         mat-icon { color: #059669; } }
     }
     .edit-form { display: grid; grid-template-columns: 160px 1fr; gap: 1.5rem; }
     .edit-preview { img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 12px; } }
-    .edit-fields { display: flex; flex-direction: column; gap: 0.5rem;
-      mat-form-field { width: 100%; } }
+    .edit-fields { display: flex; flex-direction: column; gap: 0.5rem; mat-form-field { width: 100%; } }
     .edit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
     .edit-actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem; }
     .save-edit-btn {
@@ -518,20 +652,16 @@ export class TrackingDialogComponent {
       color: white !important; display: flex; align-items: center; gap: 0.5rem;
       height: 44px; padding: 0 1.5rem;
     }
-    .products-grid-admin {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;
-    }
+    .products-grid-admin { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
     .product-admin-card { border-radius: 12px !important; overflow: hidden; transition: box-shadow 0.2s;
       &.editing { box-shadow: 0 0 0 2px #10b981 !important; } }
     .product-admin-img {
       position: relative; height: 160px; background: #f3f4f6;
       img { width: 100%; height: 100%; object-fit: cover; }
-      .stock-pill {
-        position: absolute; bottom: 8px; right: 8px; font-size: 0.75rem; font-weight: 700;
+      .stock-pill { position: absolute; bottom: 8px; right: 8px; font-size: 0.75rem; font-weight: 700;
         padding: 2px 10px; border-radius: 99px; background: #d1fae5; color: #065f46;
         &.low { background: #fef3c7; color: #d97706; }
-        &.out { background: #fee2e2; color: #dc2626; }
-      }
+        &.out { background: #fee2e2; color: #dc2626; } }
     }
     .product-admin-info { padding: 0.75rem 1rem !important;
       .admin-brand { font-size: 0.75rem; color: #9ca3af; text-transform: uppercase; margin: 0; }
@@ -540,6 +670,8 @@ export class TrackingDialogComponent {
       .admin-size { font-size: 0.8rem; color: #6b7280; margin: 0.25rem 0 0; }
     }
     .product-admin-actions { display: flex; justify-content: flex-end; gap: 0.25rem; padding: 0 0.5rem 0.5rem; }
+
+    /* Upload */
     .upload-layout { display: grid; grid-template-columns: 280px 1fr; gap: 2rem; }
     .image-zone { display: flex; flex-direction: column; gap: 0.75rem; }
     .drop-area {
@@ -550,13 +682,11 @@ export class TrackingDialogComponent {
       .drop-placeholder { text-align: center; color: #9ca3af;
         mat-icon { font-size: 3rem; width: 3rem; height: 3rem; color: #a7f3d0; }
         p { margin: 0.5rem 0 0.25rem; font-weight: 500; }
-        small { font-size: 0.75rem; }
-      }
+        small { font-size: 0.75rem; } }
       .preview-img { width: 100%; height: 100%; object-fit: cover; }
     }
     .change-photo-btn { width: 100%; }
-    .product-form { display: flex; flex-direction: column; gap: 0.5rem;
-      mat-form-field { width: 100%; } }
+    .product-form { display: flex; flex-direction: column; gap: 0.5rem; mat-form-field { width: 100%; } }
     .full-width { width: 100%; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
     .submit-btn {
@@ -572,17 +702,20 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   isConnected = false;
   isUploading = false;
   isLoadingProducts = false;
+  isLoadingInventory = false;
   isSavingEdit = false;
   editingProduct: Product | null = null;
   notifications: SaleNotification[] = [];
   recentOrders: Order[] = [];
   allProducts: Product[] = [];
+  inventoryProducts: any[] = [];
   productForm: FormGroup;
   editForm: FormGroup;
   selectedFile: File | null = null;
   previewUrl: string | null = null;
   categories: any[] = [];
   orderColumns = ['buyer', 'total', 'status', 'items', 'date', 'actions'];
+  inventoryColumns = ['product', 'category', 'size', 'condition', 'price', 'stock', 'status'];
   private subs = new Subscription();
 
   constructor(
@@ -603,7 +736,6 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       condition:   ['GOOD', Validators.required],
       categoryId:  ['', Validators.required],
     });
-
     this.editForm = this.fb.group({
       name:        ['', Validators.required],
       description: ['', Validators.required],
@@ -638,9 +770,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void { this.subs.unsubscribe(); }
 
   loadCategories(): void {
-    this.subs.add(
-      this.productsService.getCategories().subscribe({ next: cats => this.categories = cats })
-    );
+    this.subs.add(this.productsService.getCategories().subscribe({ next: cats => this.categories = cats }));
   }
 
   loadOrders(): void {
@@ -662,26 +792,42 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     );
   }
 
+  loadInventory(): void {
+    this.isLoadingInventory = true;
+    this.subs.add(
+      this.http.get<any>(`${environment.apiUrl}/products?limit=200`).subscribe({
+        next: (res) => { this.inventoryProducts = res.products; this.isLoadingInventory = false; },
+        error: () => { this.isLoadingInventory = false; }
+      })
+    );
+  }
+
+  // ── Métricas de inventario ──
+  getActiveCount(): number { return this.inventoryProducts.filter(p => p.isActive && p.stock > 0).length; }
+  getLowStockCount(): number { return this.inventoryProducts.filter(p => p.stock === 1).length; }
+  getOutOfStockCount(): number { return this.inventoryProducts.filter(p => p.stock === 0).length; }
+  getTotalInventoryValue(): number {
+    return this.inventoryProducts.reduce((sum, p) => sum + (Number(p.price) * p.stock), 0);
+  }
+
+  getConditionLabel(condition: string): string {
+    const labels: Record<string, string> = {
+      NEW: 'Nuevo', LIKE_NEW: 'Como Nuevo', GOOD: 'Buen Estado', FAIR: 'Aceptable'
+    };
+    return labels[condition] || condition;
+  }
+
   openEditProduct(product: Product): void {
     this.editingProduct = product;
     this.editForm.patchValue({
-      name:        product.name,
-      description: product.description || '',
-      price:       product.price,
-      stock:       product.stock,
-      brand:       product.brand || '',
-      size:        product.size || '',
-      condition:   product.condition,
+      name: product.name, description: product.description || '',
+      price: product.price, stock: product.stock,
+      brand: product.brand || '', size: product.size || '', condition: product.condition,
     });
-    setTimeout(() => {
-      document.querySelector('.edit-panel')?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
+    setTimeout(() => document.querySelector('.edit-panel')?.scrollIntoView({ behavior: 'smooth' }), 100);
   }
 
-  cancelEdit(): void {
-    this.editingProduct = null;
-    this.editForm.reset();
-  }
+  cancelEdit(): void { this.editingProduct = null; this.editForm.reset(); }
 
   saveEdit(): void {
     if (this.editForm.invalid || !this.editingProduct) return;
@@ -691,14 +837,9 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         next: () => {
           this.isSavingEdit = false;
           this.snackBar.open('✅ Producto actualizado correctamente', 'OK', { duration: 3000 });
-          this.editingProduct = null;
-          this.editForm.reset();
-          this.loadProducts();
+          this.editingProduct = null; this.editForm.reset(); this.loadProducts();
         },
-        error: () => {
-          this.isSavingEdit = false;
-          this.snackBar.open('Error al actualizar', 'OK', { duration: 3000 });
-        },
+        error: () => { this.isSavingEdit = false; this.snackBar.open('Error al actualizar', 'OK', { duration: 3000 }); },
       })
     );
   }
@@ -707,28 +848,19 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     if (!confirm('¿Estás seguro de eliminar este producto?')) return;
     this.subs.add(
       this.productsService.deleteProduct(id).subscribe({
-        next: () => {
-          this.snackBar.open('Producto eliminado', 'OK', { duration: 3000 });
-          this.loadProducts();
-        },
+        next: () => { this.snackBar.open('Producto eliminado', 'OK', { duration: 3000 }); this.loadProducts(); },
         error: () => this.snackBar.open('Error al eliminar', 'OK', { duration: 3000 }),
       })
     );
   }
 
   markAsShipped(orderId: string): void {
-    const ref = this.dialog.open(TrackingDialogComponent, {
-      width: '420px',
-      disableClose: true,
-    });
+    const ref = this.dialog.open(TrackingDialogComponent, { width: '420px', disableClose: true });
     ref.afterClosed().subscribe(trackingNumber => {
       if (!trackingNumber) return;
       this.subs.add(
         this.http.patch(`${environment.apiUrl}/orders/${orderId}/ship`, { trackingNumber }).subscribe({
-          next: () => {
-            this.snackBar.open('📦 Orden marcada como enviada', 'OK', { duration: 3000 });
-            this.loadOrders();
-          },
+          next: () => { this.snackBar.open('📦 Orden marcada como enviada', 'OK', { duration: 3000 }); this.loadOrders(); },
           error: () => this.snackBar.open('Error al actualizar', 'OK', { duration: 3000 }),
         })
       );
@@ -739,10 +871,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     if (!confirm('¿Marcar esta orden como entregada?')) return;
     this.subs.add(
       this.http.patch(`${environment.apiUrl}/orders/${orderId}/deliver`, {}).subscribe({
-        next: () => {
-          this.snackBar.open('✅ Orden marcada como entregada', 'OK', { duration: 3000 });
-          this.loadOrders();
-        },
+        next: () => { this.snackBar.open('✅ Orden marcada como entregada', 'OK', { duration: 3000 }); this.loadOrders(); },
         error: () => this.snackBar.open('Error al actualizar', 'OK', { duration: 3000 }),
       })
     );
@@ -752,10 +881,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     if (!confirm('¿Cancelar esta orden? Esta acción no se puede deshacer.')) return;
     this.subs.add(
       this.http.patch(`${environment.apiUrl}/orders/${orderId}/cancel`, {}).subscribe({
-        next: () => {
-          this.snackBar.open('Orden cancelada', 'OK', { duration: 3000 });
-          this.loadOrders();
-        },
+        next: () => { this.snackBar.open('Orden cancelada', 'OK', { duration: 3000 }); this.loadOrders(); },
         error: () => this.snackBar.open('Error al cancelar', 'OK', { duration: 3000 }),
       })
     );
@@ -775,9 +901,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   onSubmitProduct(): void {
     if (this.productForm.invalid) { this.productForm.markAllAsTouched(); return; }
-    if (!this.selectedFile) {
-      this.snackBar.open('Selecciona una imagen del producto', 'OK', { duration: 3000 }); return;
-    }
+    if (!this.selectedFile) { this.snackBar.open('Selecciona una imagen del producto', 'OK', { duration: 3000 }); return; }
     this.isUploading = true;
     const formData = new FormData();
     formData.append('image', this.selectedFile);
@@ -796,37 +920,28 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
           this.isUploading = false;
           this.snackBar.open(`✅ "${res.product.name}" publicado exitosamente`, 'OK', { duration: 4000 });
           this.productForm.reset({ stock: 1, condition: 'GOOD' });
-          this.selectedFile = null;
-          this.previewUrl = null;
-          this.activeTab = 'products';
-          this.loadProducts();
+          this.selectedFile = null; this.previewUrl = null;
+          this.activeTab = 'products'; this.loadProducts();
         },
-        error: (err) => {
-          this.isUploading = false;
-          this.snackBar.open(err.error?.message || 'Error al publicar', 'Cerrar', { duration: 5000 });
-        },
+        error: (err) => { this.isUploading = false; this.snackBar.open(err.error?.message || 'Error al publicar', 'Cerrar', { duration: 5000 }); },
       })
     );
   }
 
   formatPrice(price: number): string {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency', currency: 'COP', maximumFractionDigits: 0,
-    }).format(price);
+    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(price);
   }
 
   getStatusColor(status: string): string {
     const colors: Record<string, string> = {
-      PENDING: '#f59e0b', PAID: '#10b981', SHIPPED: '#3b82f6',
-      DELIVERED: '#6b7280', CANCELLED: '#ef4444',
+      PENDING: '#f59e0b', PAID: '#10b981', SHIPPED: '#3b82f6', DELIVERED: '#6b7280', CANCELLED: '#ef4444',
     };
     return colors[status] || '#6b7280';
   }
 
   getStatusLabel(status: string): string {
     const labels: Record<string, string> = {
-      PENDING: 'Pendiente', PAID: 'Pagado', SHIPPED: 'Enviado',
-      DELIVERED: 'Entregado', CANCELLED: 'Cancelado',
+      PENDING: 'Pendiente', PAID: 'Pagado', SHIPPED: 'Enviado', DELIVERED: 'Entregado', CANCELLED: 'Cancelado',
     };
     return labels[status] || status;
   }

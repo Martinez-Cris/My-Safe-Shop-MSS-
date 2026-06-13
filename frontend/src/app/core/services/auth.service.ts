@@ -20,7 +20,7 @@ export interface AuthResponse {
   token: string;
 }
 
-const INACTIVITY_LIMIT = 10 * 1000; // 10 segundos en ms
+const INACTIVITY_LIMIT = 15 * 60 * 1000; // 15 minutos en milisegundos
 const ACTIVITY_EVENTS = ['click', 'keydown', 'mousemove', 'scroll', 'touchstart'];
 
 @Injectable({ providedIn: 'root' })

@@ -1,12 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { User, Role } from '@prisma/client';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class UsersRepository {
-  // El resto del sistema no sabe como se busca o almacena un usuario, solo sabe que puede pedirlo por email o id, o crear uno nuevo. Esto permite cambiar la implementación interna sin afectar al resto del sistema
   constructor(private readonly prisma: PrismaService) {}
-  
+
   async findByEmail(email: string): Promise<User | null> {
     return this.prisma.user.findUnique({ where: { email } });
   }
@@ -15,7 +14,7 @@ export class UsersRepository {
     return this.prisma.user.findUnique({ where: { id } });
   }
 
-  async create(data: { name: string; email: string; password: string; role?: Role }): Promise<User> {
+  async create(data: { name: string; email: string; password: string; role?: string }): Promise<User> {
     return this.prisma.user.create({ data });
   }
 
