@@ -24,6 +24,15 @@ export class UpdateProfileDto {
   @IsOptional() @IsString() city?: string;
 }
 
+export class ForgotPasswordDto {
+  @IsEmail() email: string;
+}
+
+export class ResetPasswordDto {
+  @IsString() @IsNotEmpty() token: string;
+  @IsString() @MinLength(6) newPassword: string;
+}
+
 export class ChangePasswordDto {
   @IsString() @IsNotEmpty() currentPassword: string;
   @IsString() @MinLength(6) newPassword: string;
@@ -71,4 +80,17 @@ export class AuthController {
   changePassword(@Req() req: any, @Body() dto: ChangePasswordDto) {
     return this.authService.changePassword(req.user.id, dto.currentPassword, dto.newPassword);
   }
+  @Public()
+@Post('forgot-password')
+@ApiOperation({ summary: 'Solicitar recuperación de contraseña' })
+forgotPassword(@Body() dto: ForgotPasswordDto) {
+  return this.authService.forgotPassword(dto.email);
+}
+
+@Public()
+@Post('reset-password')
+@ApiOperation({ summary: 'Restablecer contraseña con token' })
+resetPassword(@Body() dto: ResetPasswordDto) {
+  return this.authService.resetPassword(dto.token, dto.newPassword);
+}
 }

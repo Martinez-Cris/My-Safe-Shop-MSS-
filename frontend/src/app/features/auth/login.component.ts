@@ -66,6 +66,10 @@ import { AuthService } from '../../core/services/auth.service';
 
                 <div class="admin-hint">
                   <mat-icon>admin_panel_settings</mat-icon>
+                  <button mat-button type="button" class="forgot-btn"
+                    (click)="goToForgot()">
+                    ¿Olvidaste tu contraseña?
+                  </button>
                  
                 </div>
               </form>
@@ -162,6 +166,7 @@ import { AuthService } from '../../core/services/auth.service';
       color: white !important; border-radius: 10px !important;
       box-shadow: 0 4px 15px rgba(16,185,129,0.4) !important;
     }
+    .forgot-btn { color: #6b7280; font-size: 0.85rem; margin-top: 0.25rem; }
     .admin-hint {
       display: flex; align-items: center; gap: 0.35rem;
       color: #9ca3af; font-size: 0.75rem; margin-top: 0.5rem; justify-content: center;
@@ -227,4 +232,5 @@ export class LoginComponent {
       },
     });
   }
+  goToForgot(): void { this.router.navigate(['/forgot-password']); }
 }

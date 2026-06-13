@@ -3,6 +3,9 @@ import { JwtService } from '@nestjs/jwt';
 import { UsersRepository } from './users.repository';
 import * as bcrypt from 'bcrypt';
 import { Role } from '@prisma/client';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { EmailService } from './email.service';
+import * as crypto from 'crypto';
 
 export interface JwtPayload {
   sub: string;
@@ -17,6 +20,8 @@ export class AuthService {
   constructor(
     private readonly usersRepository: UsersRepository,
     private readonly jwtService: JwtService,
+    private readonly prisma: PrismaService,
+    private readonly emailService: EmailService,
   ) {}
 
   async register(data: { name: string; email: string; password: string }) {
@@ -91,4 +96,41 @@ export class AuthService {
     const { password, ...rest } = user;
     return rest;
   }
+  async forgotPassword(email: string) {
+  const user = await this.usersRepository.findByEmail(email);
+  // Siempre responde igual para no revelar si el email existe
+  if (!user) return { message: 'Si el correo existe, recibirás un enlace en breve.' };
+
+  const token = crypto.randomUUID();
+  const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutos
+
+  await this.prisma.passwordResetToken.create({
+    data: { token, email, expiresAt },
+  });
+
+  await this.emailService.sendPasswordReset(email, token);
+  return { message: 'Si el correo existe, recibirás un enlace en breve.' };
+}
+
+async resetPassword(token: string, newPassword: string) {
+  const record = await this.prisma.passwordResetToken.findUnique({
+    where: { token },
+  });
+
+  if (!record || record.used || record.expiresAt < new Date()) {
+    throw new BadRequestException('El enlace es inválido o ha expirado.');
+  }
+
+  const hashed = await bcrypt.hash(newPassword, 10);
+  const user = await this.usersRepository.findByEmail(record.email);
+  if (!user) throw new BadRequestException('Usuario no encontrado.');
+
+  await this.usersRepository.updatePassword(user.id, hashed);
+  await this.prisma.passwordResetToken.update({
+    where: { token },
+    data: { used: true },
+  });
+
+  return { message: 'Contraseña actualizada correctamente.' };
+}
 }
