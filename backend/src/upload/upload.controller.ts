@@ -1,39 +1,51 @@
-import { Controller, Post, UploadedFile, UseInterceptors, BadRequestException, Body } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  Controller, Post, Body, BadRequestException
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { CloudinaryService } from './cloudinary.service';
 import { ProductsService } from '../products/products.service';
-import { CreateProductDto } from '../products/dto/create-product.dto';
-import { memoryStorage } from 'multer';
+import { IsString, IsArray, IsOptional, IsNumber, Min } from 'class-validator';
+
+export class CreateProductWithImagesDto {
+  @IsString() name: string;
+  @IsString() description: string;
+  @IsNumber() @Min(1000) price: number;
+  @IsNumber() @IsOptional() stock?: number;
+  @IsString() @IsOptional() size?: string;
+  @IsString() @IsOptional() brand?: string;
+  @IsString() @IsOptional() condition?: string;
+  @IsString() categoryId: string;
+  @IsArray() images: string[];
+}
 
 @ApiTags('upload')
 @Controller('upload')
 export class UploadController {
   constructor(
-    private readonly cloudinaryService: CloudinaryService,
     private readonly productsService: ProductsService,
   ) {}
 
   @Post('product')
-  @UseInterceptors(FileInterceptor('image', { storage: memoryStorage() }))
-  async uploadAndCreateProduct(
-    @UploadedFile() file: Express.Multer.File,
-    @Body() dto: CreateProductDto,
-  ) {
-    if (!file) throw new BadRequestException('Se requiere una imagen del producto');
-    const uploaded: any = await this.cloudinaryService.uploadProductImage(file, dto.name);
-    const product = await this.productsService.create({
-      ...dto,
-      imageUrl: uploaded.secureUrl,
-      cloudinaryPublicId: uploaded.publicId,
-    });
-    return { message: 'Producto creado exitosamente', product, image: uploaded };
-  }
+  async createProductWithImages(@Body() dto: CreateProductWithImagesDto) {
+    if (!dto.images || dto.images.length === 0) {
+      throw new BadRequestException('Se requiere al menos una imagen');
+    }
+    if (dto.images.length > 3) {
+      throw new BadRequestException('Máximo 3 imágenes por producto');
+    }
 
-  @Post('image')
-  @UseInterceptors(FileInterceptor('image', { storage: memoryStorage() }))
-  async uploadImage(@UploadedFile() file: Express.Multer.File) {
-    if (!file) throw new BadRequestException('Se requiere una imagen');
-    return this.cloudinaryService.uploadProductImage(file);
+    const product = await this.productsService.createWithImages({
+      name: dto.name,
+      description: dto.description,
+      price: dto.price,
+      stock: dto.stock ?? 1,
+      size: dto.size,
+      brand: dto.brand,
+      condition: dto.condition,
+      categoryId: dto.categoryId,
+      imageUrl: null,
+      images: dto.images.map((base64, index) => ({ base64, order: index })),
+    });
+
+    return { message: 'Producto creado exitosamente', product };
   }
 }

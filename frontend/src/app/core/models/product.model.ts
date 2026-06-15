@@ -7,6 +7,12 @@ export interface Category {
   slug: string;
 }
 
+export interface ProductImage {
+  id: string;
+  base64: string;
+  order: number;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -21,6 +27,7 @@ export interface Product {
   categoryId: string;
   category: Category;
   createdAt: string;
+  images?: ProductImage[];
 }
 
 export interface ProductsResponse {

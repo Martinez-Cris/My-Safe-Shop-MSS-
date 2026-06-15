@@ -37,6 +37,7 @@ model Product {
   updatedAt          DateTime    @updatedAt @map("updated_at")
   category           Category    @relation(fields: [categoryId], references: [id])
   orderItems         OrderItem[]
+  images             ProductImage[]
 
   @@index([categoryId])
   @@index([isActive])
@@ -105,4 +106,16 @@ model PasswordResetToken {
 
   @@index([email])
   @@map("password_reset_tokens")
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  base64    String   @db.VarChar(Max)
+  order     Int      @default(0)
+  productId String   @map("product_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([productId])
+  @@map("product_images")
 }

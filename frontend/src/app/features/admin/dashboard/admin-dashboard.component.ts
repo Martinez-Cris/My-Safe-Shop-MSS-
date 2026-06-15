@@ -242,8 +242,7 @@ export class TrackingDialogComponent {
             </div>
             <form [formGroup]="editForm" (ngSubmit)="saveEdit()" class="edit-form">
               <div class="edit-preview">
-                <img [src]="editingProduct.imageUrl || 'https://via.placeholder.com/200'"
-                  [alt]="editingProduct.name">
+                <img [src]="getProductMainImage(editingProduct)" [alt]="editingProduct.name">
               </div>
               <div class="edit-fields">
                 <mat-form-field appearance="outline">
@@ -306,9 +305,12 @@ export class TrackingDialogComponent {
             <mat-card *ngFor="let product of allProducts" class="product-admin-card"
               [class.editing]="editingProduct?.id === product.id">
               <div class="product-admin-img">
-                <img [src]="product.imageUrl || 'https://via.placeholder.com/200'" [alt]="product.name">
+                <img [src]="getProductMainImage(product)" [alt]="product.name">
                 <span class="stock-pill" [class.low]="product.stock <= 1" [class.out]="product.stock === 0">
                   {{ product.stock === 0 ? 'Agotado' : product.stock + ' uds.' }}
+                </span>
+                <span class="img-count-pill" *ngIf="(product.images?.length || 0) > 1">
+                  <mat-icon>photo_library</mat-icon> {{ product.images?.length }}
                 </span>
               </div>
               <mat-card-content class="product-admin-info">
@@ -338,8 +340,6 @@ export class TrackingDialogComponent {
             <h2><mat-icon>assessment</mat-icon> Inventario</h2>
             <button mat-icon-button (click)="loadInventory()"><mat-icon>refresh</mat-icon></button>
           </div>
-
-          <!-- Métricas rápidas -->
           <div class="inventory-metrics">
             <div class="metric-card">
               <mat-icon>inventory_2</mat-icon>
@@ -377,15 +377,13 @@ export class TrackingDialogComponent {
               </div>
             </div>
           </div>
-
-          <!-- Tabla de inventario -->
           <div class="inventory-table-wrap" *ngIf="!isLoadingInventory">
             <table mat-table [dataSource]="inventoryProducts" class="inventory-table">
               <ng-container matColumnDef="product">
                 <th mat-header-cell *matHeaderCellDef>Producto</th>
                 <td mat-cell *matCellDef="let p">
                   <div class="inv-product">
-                    <img [src]="p.imageUrl || 'https://via.placeholder.com/40'" [alt]="p.name">
+                    <img [src]="getProductMainImage(p)" [alt]="p.name">
                     <div>
                       <div class="inv-name">{{ p.name }}</div>
                       <div class="inv-brand">{{ p.brand || '—' }}</div>
@@ -447,19 +445,26 @@ export class TrackingDialogComponent {
           </div>
           <div class="upload-layout">
             <div class="image-zone">
-              <div class="drop-area" (click)="fileInput.click()">
-                <div *ngIf="!previewUrl" class="drop-placeholder">
-                  <mat-icon>cloud_upload</mat-icon>
-                  <p>Clic para subir foto</p>
+              <p class="images-hint">
+                <mat-icon>info</mat-icon> Máximo 3 fotos. La primera será la principal.
+              </p>
+              <div class="images-grid">
+                <div *ngFor="let preview of imagePreviews; let i = index" class="image-preview-item">
+                  <img [src]="preview" [alt]="'Foto ' + (i+1)">
+                  <button class="remove-img-btn" type="button" (click)="removeImage(i)">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                  <span class="img-order-badge">{{ i === 0 ? 'Principal' : 'Foto ' + (i+1) }}</span>
+                </div>
+                <div class="add-image-slot" *ngIf="imagePreviews.length < 3" (click)="fileInput.click()">
+                  <mat-icon>add_photo_alternate</mat-icon>
+                  <span>{{ imagePreviews.length === 0 ? 'Agregar fotos' : 'Agregar otra' }}</span>
                   <small>JPEG, PNG — máx 10MB</small>
                 </div>
-                <img *ngIf="previewUrl" [src]="previewUrl" class="preview-img">
               </div>
-              <input #fileInput type="file" accept="image/*" hidden (change)="onFileSelected($event)">
-              <button mat-stroked-button *ngIf="previewUrl" (click)="fileInput.click()" class="change-photo-btn">
-                <mat-icon>swap_horiz</mat-icon> Cambiar foto
-              </button>
+              <input #fileInput type="file" accept="image/*" multiple hidden (change)="onFilesSelected($event)">
             </div>
+
             <form [formGroup]="productForm" class="product-form" (ngSubmit)="onSubmitProduct()">
               <mat-form-field appearance="outline">
                 <mat-label>Nombre del artículo</mat-label>
@@ -576,8 +581,6 @@ export class TrackingDialogComponent {
       .notif-header { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
       .total-amount { color: #10b981; font-size: 1.1rem; }
     }
-
-    /* Pedidos */
     .orders-table-wrap { background: white; border-radius: 12px; overflow: hidden;
       box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
     .orders-table { width: 100%; }
@@ -589,8 +592,6 @@ export class TrackingDialogComponent {
     .units-badge { display: inline-block; background: #dbeafe; color: #1e40af;
       font-size: 0.7rem; font-weight: 700; padding: 1px 7px; border-radius: 99px; }
     .empty-table { text-align: center; padding: 2rem; color: #6b7280; }
-
-    /* Inventario — métricas */
     .inventory-metrics {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
       gap: 1rem; margin-bottom: 1.5rem;
@@ -605,11 +606,8 @@ export class TrackingDialogComponent {
       &.active { border-left-color: #10b981; mat-icon { color: #10b981; } }
       &.warning { border-left-color: #f59e0b; mat-icon { color: #f59e0b; } }
       &.danger { border-left-color: #ef4444; mat-icon { color: #ef4444; } }
-      &.total { border-left-color: #6366f1; mat-icon { color: #6366f1; }
-        .metric-value { font-size: 1rem; } }
+      &.total { border-left-color: #6366f1; mat-icon { color: #6366f1; } .metric-value { font-size: 1rem; } }
     }
-
-    /* Inventario — tabla */
     .inventory-table-wrap { background: white; border-radius: 12px; overflow: hidden;
       box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
     .inventory-table { width: 100%; }
@@ -630,8 +628,6 @@ export class TrackingDialogComponent {
     .status-badge-inv { padding: 3px 10px; border-radius: 99px; font-size: 0.8rem; font-weight: 600; }
     .status-badge-inv.active { background: #d1fae5; color: #065f46; }
     .status-badge-inv.inactive { background: #f3f4f6; color: #6b7280; }
-
-    /* Productos */
     .edit-panel {
       background: white; border-radius: 16px; padding: 1.5rem;
       margin-bottom: 1.5rem; border: 2px solid #10b981;
@@ -662,6 +658,12 @@ export class TrackingDialogComponent {
         padding: 2px 10px; border-radius: 99px; background: #d1fae5; color: #065f46;
         &.low { background: #fef3c7; color: #d97706; }
         &.out { background: #fee2e2; color: #dc2626; } }
+      .img-count-pill {
+        position: absolute; top: 8px; right: 8px; font-size: 0.7rem; font-weight: 700;
+        padding: 2px 8px; border-radius: 99px; background: rgba(0,0,0,0.6); color: white;
+        display: flex; align-items: center; gap: 3px;
+        mat-icon { font-size: 0.85rem; width: 0.85rem; height: 0.85rem; }
+      }
     }
     .product-admin-info { padding: 0.75rem 1rem !important;
       .admin-brand { font-size: 0.75rem; color: #9ca3af; text-transform: uppercase; margin: 0; }
@@ -670,22 +672,40 @@ export class TrackingDialogComponent {
       .admin-size { font-size: 0.8rem; color: #6b7280; margin: 0.25rem 0 0; }
     }
     .product-admin-actions { display: flex; justify-content: flex-end; gap: 0.25rem; padding: 0 0.5rem 0.5rem; }
-
-    /* Upload */
-    .upload-layout { display: grid; grid-template-columns: 280px 1fr; gap: 2rem; }
+    .upload-layout { display: grid; grid-template-columns: 320px 1fr; gap: 2rem; }
     .image-zone { display: flex; flex-direction: column; gap: 0.75rem; }
-    .drop-area {
-      width: 100%; aspect-ratio: 1; border: 2px dashed #a7f3d0; border-radius: 12px;
-      display: flex; align-items: center; justify-content: center; cursor: pointer;
-      background: #f0fdf4; transition: all 0.2s; overflow: hidden;
-      &:hover { border-color: #059669; background: #d1fae5; }
-      .drop-placeholder { text-align: center; color: #9ca3af;
-        mat-icon { font-size: 3rem; width: 3rem; height: 3rem; color: #a7f3d0; }
-        p { margin: 0.5rem 0 0.25rem; font-weight: 500; }
-        small { font-size: 0.75rem; } }
-      .preview-img { width: 100%; height: 100%; object-fit: cover; }
+    .images-hint {
+      display: flex; align-items: center; gap: 0.4rem;
+      color: #6b7280; font-size: 0.85rem; margin: 0;
+      mat-icon { font-size: 1rem; width: 1rem; height: 1rem; color: #059669; }
     }
-    .change-photo-btn { width: 100%; }
+    .images-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+    .image-preview-item {
+      position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden;
+      border: 2px solid #a7f3d0;
+      img { width: 100%; height: 100%; object-fit: cover; }
+      .remove-img-btn {
+        position: absolute; top: 4px; right: 4px;
+        background: rgba(0,0,0,0.6); border: none; border-radius: 50%;
+        width: 28px; height: 28px; cursor: pointer; display: flex;
+        align-items: center; justify-content: center; color: white; padding: 0;
+        mat-icon { font-size: 1rem; width: 1rem; height: 1rem; }
+      }
+      .img-order-badge {
+        position: absolute; bottom: 4px; left: 4px; font-size: 0.7rem; font-weight: 700;
+        padding: 2px 8px; border-radius: 99px;
+        background: rgba(5,150,105,0.85); color: white;
+      }
+    }
+    .add-image-slot {
+      aspect-ratio: 1; border: 2px dashed #a7f3d0; border-radius: 12px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      cursor: pointer; background: #f0fdf4; transition: all 0.2s; gap: 0.25rem;
+      &:hover { border-color: #059669; background: #d1fae5; }
+      mat-icon { font-size: 2rem; width: 2rem; height: 2rem; color: #a7f3d0; }
+      span { font-size: 0.85rem; color: #6b7280; font-weight: 500; }
+      small { font-size: 0.7rem; color: #9ca3af; }
+    }
     .product-form { display: flex; flex-direction: column; gap: 0.5rem; mat-form-field { width: 100%; } }
     .full-width { width: 100%; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
@@ -711,8 +731,9 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   inventoryProducts: any[] = [];
   productForm: FormGroup;
   editForm: FormGroup;
-  selectedFile: File | null = null;
-  previewUrl: string | null = null;
+  selectedFiles: File[] = [];
+  imagePreviews: string[] = [];
+  base64Images: string[] = [];
   categories: any[] = [];
   orderColumns = ['buyer', 'total', 'status', 'items', 'date', 'actions'];
   inventoryColumns = ['product', 'category', 'size', 'condition', 'price', 'stock', 'status'];
@@ -802,7 +823,6 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     );
   }
 
-  // ── Métricas de inventario ──
   getActiveCount(): number { return this.inventoryProducts.filter(p => p.isActive && p.stock > 0).length; }
   getLowStockCount(): number { return this.inventoryProducts.filter(p => p.stock === 1).length; }
   getOutOfStockCount(): number { return this.inventoryProducts.filter(p => p.stock === 0).length; }
@@ -815,6 +835,12 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       NEW: 'Nuevo', LIKE_NEW: 'Como Nuevo', GOOD: 'Buen Estado', FAIR: 'Aceptable'
     };
     return labels[condition] || condition;
+  }
+
+  getProductMainImage(product: any): string {
+    if (product?.images?.length > 0) return product.images[0].base64;
+    if (product?.imageUrl) return product.imageUrl;
+    return 'https://via.placeholder.com/200';
   }
 
   openEditProduct(product: Product): void {
@@ -889,41 +915,85 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   sendTestNotification(): void { this.notificationsService.testNotification(); }
 
-  onFileSelected(event: Event): void {
+  onFilesSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      this.selectedFile = input.files[0];
-      const reader = new FileReader();
-      reader.onload = (e: any) => this.previewUrl = e.target.result;
-      reader.readAsDataURL(this.selectedFile);
+    if (!input.files) return;
+    const newFiles = Array.from(input.files);
+    const remaining = 3 - this.selectedFiles.length;
+    if (newFiles.length > remaining) {
+      this.snackBar.open(`Solo puedes agregar ${remaining} foto(s) más`, 'OK', { duration: 3000 });
     }
+    const toAdd = newFiles.slice(0, remaining);
+    toAdd.forEach(file => {
+      this.selectedFiles.push(file);
+      this.compressAndPreview(file);
+    });
+    input.value = '';
+  }
+
+  compressAndPreview(file: File): void {
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX = 800;
+        let w = img.width, h = img.height;
+        if (w > h && w > MAX) { h = h * MAX / w; w = MAX; }
+        else if (h > MAX) { w = w * MAX / h; h = MAX; }
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+        const compressed = canvas.toDataURL('image/jpeg', 0.7);
+        this.imagePreviews.push(compressed);
+        this.base64Images.push(compressed);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  removeImage(index: number): void {
+    this.selectedFiles.splice(index, 1);
+    this.imagePreviews.splice(index, 1);
+    this.base64Images.splice(index, 1);
   }
 
   onSubmitProduct(): void {
     if (this.productForm.invalid) { this.productForm.markAllAsTouched(); return; }
-    if (!this.selectedFile) { this.snackBar.open('Selecciona una imagen del producto', 'OK', { duration: 3000 }); return; }
+    if (this.base64Images.length === 0) {
+      this.snackBar.open('Selecciona al menos una imagen del producto', 'OK', { duration: 3000 });
+      return;
+    }
     this.isUploading = true;
-    const formData = new FormData();
-    formData.append('image', this.selectedFile);
     const values = this.productForm.value;
-    formData.append('name', values.name);
-    formData.append('description', values.description);
-    formData.append('price', Number(values.price).toString());
-    formData.append('stock', Number(values.stock).toString());
-    formData.append('brand', values.brand || '');
-    formData.append('size', values.size || '');
-    formData.append('condition', values.condition);
-    formData.append('categoryId', values.categoryId);
+    const body = {
+      name: values.name,
+      description: values.description,
+      price: Number(values.price),
+      stock: Number(values.stock),
+      brand: values.brand || '',
+      size: values.size || '',
+      condition: values.condition,
+      categoryId: values.categoryId,
+      images: this.base64Images,
+    };
     this.subs.add(
-      this.productsService.createProductWithImage(formData).subscribe({
-        next: (res) => {
+      this.http.post(`${environment.apiUrl}/upload/product`, body).subscribe({
+        next: (res: any) => {
           this.isUploading = false;
-          this.snackBar.open(`✅ "${res.product.name}" publicado exitosamente`, 'OK', { duration: 4000 });
+          this.snackBar.open(`✅ "${res.product.name}" publicado con ${this.base64Images.length} foto(s)`, 'OK', { duration: 4000 });
           this.productForm.reset({ stock: 1, condition: 'GOOD' });
-          this.selectedFile = null; this.previewUrl = null;
-          this.activeTab = 'products'; this.loadProducts();
+          this.selectedFiles = [];
+          this.imagePreviews = [];
+          this.base64Images = [];
+          this.activeTab = 'products';
+          this.loadProducts();
         },
-        error: (err) => { this.isUploading = false; this.snackBar.open(err.error?.message || 'Error al publicar', 'Cerrar', { duration: 5000 }); },
+        error: (err) => {
+          this.isUploading = false;
+          this.snackBar.open(err.error?.message || 'Error al publicar', 'Cerrar', { duration: 5000 });
+        },
       })
     );
   }

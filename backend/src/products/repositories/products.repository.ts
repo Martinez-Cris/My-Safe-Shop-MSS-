@@ -17,25 +17,41 @@ export class ProductsRepository {
       skip, take,
       where: { isActive: true, ...where },
       orderBy: orderBy ?? { createdAt: 'desc' },
-      include: { category: true },
+      include: {
+        category: true,
+        images: { orderBy: { order: 'asc' } },
+      },
     });
   }
 
   async findById(id: string): Promise<Product | null> {
     return this.prisma.product.findUnique({
       where: { id },
-      include: { category: true },
+      include: {
+        category: true,
+        images: { orderBy: { order: 'asc' } },
+      },
     });
   }
 
   async create(data: Prisma.ProductCreateInput): Promise<Product> {
-    return this.prisma.product.create({ data, include: { category: true } });
+    return this.prisma.product.create({
+      data,
+      include: {
+        category: true,
+        images: { orderBy: { order: 'asc' } },
+      },
+    });
   }
 
   async update(id: string, data: Prisma.ProductUpdateInput): Promise<Product> {
     return this.prisma.product.update({
-      where: { id }, data,
-      include: { category: true },
+      where: { id },
+      data,
+      include: {
+        category: true,
+        images: { orderBy: { order: 'asc' } },
+      },
     });
   }
 
