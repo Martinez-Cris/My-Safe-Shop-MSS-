@@ -28,14 +28,38 @@ import { Product } from '../../../core/models/product.model';
 
       <div *ngIf="!isLoading && product" class="product-layout">
 
-        <!-- Imagen -->
+        <!-- Galería de imágenes -->
         <div class="product-image-section">
           <div class="main-image">
-            <img [src]="product.imageUrl || 'https://via.placeholder.com/500x500?text=Sin+Imagen'"
-              [alt]="product.name">
+            <img [src]="selectedImage" [alt]="product.name">
             <span class="condition-badge large">{{ conditionLabels[product.condition] }}</span>
             <span class="stock-badge last" *ngIf="product.stock === 1">¡Última unidad!</span>
             <span class="stock-badge out" *ngIf="product.stock === 0">Agotado</span>
+
+            <!-- Navegación de imágenes -->
+            <button class="nav-btn prev" *ngIf="allImages.length > 1"
+              (click)="prevImage()">
+              <mat-icon>chevron_left</mat-icon>
+            </button>
+            <button class="nav-btn next" *ngIf="allImages.length > 1"
+              (click)="nextImage()">
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+
+            <!-- Indicador de foto -->
+            <div class="image-counter" *ngIf="allImages.length > 1">
+              {{ currentImageIndex + 1 }} / {{ allImages.length }}
+            </div>
+          </div>
+
+          <!-- Miniaturas -->
+          <div class="thumbnails" *ngIf="allImages.length > 1">
+            <div *ngFor="let img of allImages; let i = index"
+              class="thumbnail"
+              [class.active]="i === currentImageIndex"
+              (click)="selectImage(i)">
+              <img [src]="img" [alt]="'Foto ' + (i+1)">
+            </div>
           </div>
         </div>
 
@@ -98,7 +122,7 @@ import { Product } from '../../../core/models/product.model';
 
           <div class="safe-buy">
             <mat-icon>verified_user</mat-icon>
-            <p>Compra segura — procesada por Stripe. Artículo verificado por MY SAFE SHOP.</p>
+            <p>Compra segura — procesada por Wompi. Artículo verificado por MY SAFE SHOP.</p>
           </div>
         </div>
       </div>
@@ -122,11 +146,42 @@ import { Product } from '../../../core/models/product.model';
       display: grid; grid-template-columns: 1fr 1fr; gap: 3rem;
       @media (max-width: 768px) { grid-template-columns: 1fr; }
     }
+
+    /* Galería */
+    .product-image-section { display: flex; flex-direction: column; gap: 0.75rem; }
     .main-image {
       position: relative; border-radius: 16px; overflow: hidden;
       aspect-ratio: 1; background: #f3f4f6;
-      img { width: 100%; height: 100%; object-fit: cover; }
+      img { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.2s; }
     }
+    .nav-btn {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      background: rgba(255,255,255,0.9); border: none; border-radius: 50%;
+      width: 40px; height: 40px; cursor: pointer; display: flex;
+      align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: all 0.2s;
+      &:hover { background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+      mat-icon { color: #064e3b; }
+      &.prev { left: 12px; }
+      &.next { right: 12px; }
+    }
+    .image-counter {
+      position: absolute; bottom: 12px; right: 12px;
+      background: rgba(0,0,0,0.6); color: white;
+      font-size: 0.75rem; font-weight: 600; padding: 3px 10px; border-radius: 99px;
+    }
+    .thumbnails {
+      display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 4px;
+    }
+    .thumbnail {
+      width: 72px; height: 72px; flex-shrink: 0; border-radius: 8px;
+      overflow: hidden; cursor: pointer; border: 2px solid transparent;
+      transition: border-color 0.2s;
+      img { width: 100%; height: 100%; object-fit: cover; }
+      &.active { border-color: #059669; }
+      &:hover { border-color: #10b981; }
+    }
+
     .condition-badge {
       position: absolute; top: 12px; left: 12px;
       background: rgba(255,255,255,0.95); color: #059669;
@@ -184,6 +239,9 @@ export class ProductDetailComponent implements OnInit {
   product: Product | null = null;
   isLoading = true;
   isInCart = false;
+  allImages: string[] = [];
+  selectedImage = '';
+  currentImageIndex = 0;
 
   conditionLabels: Record<string, string> = {
     NEW: 'Nuevo', LIKE_NEW: 'Como Nuevo', GOOD: 'Buen Estado', FAIR: 'Aceptable',
@@ -201,6 +259,7 @@ export class ProductDetailComponent implements OnInit {
       this.productsService.getProduct(id).subscribe({
         next: (product) => {
           this.product = product;
+          this.buildImageGallery(product);
           this.isLoading = false;
           this.cartService.items$.subscribe(items => {
             this.isInCart = items.some(i => i.product.id === product.id);
@@ -209,6 +268,46 @@ export class ProductDetailComponent implements OnInit {
         error: () => { this.isLoading = false; }
       });
     }
+  }
+
+  buildImageGallery(product: any): void {
+    this.allImages = [];
+    if (product?.images?.length > 0) {
+      this.allImages = product.images
+        .sort((a: any, b: any) => a.order - b.order)
+        .map((img: any) => img.base64);
+    } else if (product?.imageUrl) {
+      this.allImages = [product.imageUrl];
+    } else {
+      this.allImages = ['https://via.placeholder.com/500x500?text=Sin+Imagen'];
+    }
+    this.currentImageIndex = 0;
+    this.selectedImage = this.allImages[0];
+  }
+
+  selectImage(index: number): void {
+    this.currentImageIndex = index;
+    this.selectedImage = this.allImages[index];
+  }
+
+  prevImage(): void {
+    this.currentImageIndex = this.currentImageIndex === 0
+      ? this.allImages.length - 1
+      : this.currentImageIndex - 1;
+    this.selectedImage = this.allImages[this.currentImageIndex];
+  }
+
+  nextImage(): void {
+    this.currentImageIndex = this.currentImageIndex === this.allImages.length - 1
+      ? 0
+      : this.currentImageIndex + 1;
+    this.selectedImage = this.allImages[this.currentImageIndex];
+  }
+
+  getProductImage(product: any): string {
+    if (product?.images?.length > 0) return product.images[0].base64;
+    if (product?.imageUrl) return product.imageUrl;
+    return 'https://via.placeholder.com/500x500?text=Sin+Imagen';
   }
 
   addToCart(): void {
@@ -222,4 +321,4 @@ export class ProductDetailComponent implements OnInit {
       style: 'currency', currency: 'COP', maximumFractionDigits: 0,
     }).format(price);
   }
-} 
+}

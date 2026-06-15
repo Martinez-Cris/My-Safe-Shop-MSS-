@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -13,6 +13,8 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { CartService } from '../../../core/services/cart.service';
 import { PaymentsService } from '../../../core/services/payments.service';
 import { CartItem } from '../../../core/models/product.model';
+
+declare const WidgetCheckout: any;
 
 @Component({
   selector: 'app-cart',
@@ -36,8 +38,7 @@ import { CartItem } from '../../../core/models/product.model';
       <div *ngIf="cartItems.length > 0" class="cart-content">
         <div class="cart-items">
           <mat-card *ngFor="let item of cartItems" class="cart-item">
-            <img [src]="item.product.imageUrl || 'https://via.placeholder.com/100'"
-              [alt]="item.product.name">
+            <img [src]="getItemImage(item)" [alt]="item.product.name">
             <div class="item-info">
               <h3>{{ item.product.name }}</h3>
               <p class="item-meta">{{ item.product.brand }} · Talla {{ item.product.size }}</p>
@@ -106,7 +107,7 @@ import { CartItem } from '../../../core/models/product.model';
                 <mat-error>La dirección es requerida</mat-error>
               </mat-form-field>
               <button mat-raised-button color="primary" class="checkout-btn"
-                (click)="onCheckout()" [disabled]="isLoading">
+                (click)="onCheckout()" [disabled]="isLoading || widgetOpen">
                 <mat-spinner *ngIf="isLoading" diameter="20"></mat-spinner>
                 <mat-icon *ngIf="!isLoading">lock</mat-icon>
                 {{ isLoading ? 'Procesando...' : 'Pagar — ' + formatPrice(total) }}
@@ -156,13 +157,17 @@ export class CartComponent implements OnInit {
   cartItems: CartItem[] = [];
   total = 0;
   isLoading = false;
+  widgetOpen = false;
   checkoutForm: FormGroup;
+  private currentOrderId: string | null = null;
+  private wompiWidget: any = null;
 
   constructor(
     public cartService: CartService,
     private paymentsService: PaymentsService,
     private fb: FormBuilder,
     private snackBar: MatSnackBar,
+    private router: Router,
   ) {
     this.checkoutForm = this.fb.group({
       buyerName: ['', Validators.required],
@@ -179,6 +184,13 @@ export class CartComponent implements OnInit {
     });
   }
 
+  getItemImage(item: CartItem): string {
+    const product = item.product as any;
+    if (product?.images?.length > 0) return product.images[0].base64;
+    if (product?.imageUrl) return product.imageUrl;
+    return 'https://via.placeholder.com/100';
+  }
+
   removeItem(productId: string): void { this.cartService.removeItem(productId); }
 
   updateQty(productId: string, qty: number): void {
@@ -192,6 +204,7 @@ export class CartComponent implements OnInit {
   }
 
   onCheckout(): void {
+    if (this.isLoading || this.widgetOpen) return;
     if (this.checkoutForm.invalid) { this.checkoutForm.markAllAsTouched(); return; }
     if (this.cartItems.length === 0) {
       this.snackBar.open('Tu carrito está vacío', 'OK', { duration: 3000 }); return;
@@ -204,16 +217,60 @@ export class CartComponent implements OnInit {
       phone: formValue.buyerPhone,
       address: formValue.shippingAddress,
     });
+
     this.paymentsService.checkout(payload).subscribe({
       next: (response) => {
         this.isLoading = false;
-        this.cartService.clear();
-        this.paymentsService.redirectToGateway(response.payment.checkoutUrl);
+        this.currentOrderId = response.order.id;
+        this.openWompiWidget(response.payment);
       },
       error: (err) => {
         this.isLoading = false;
         this.snackBar.open(err.error?.message || 'Error al procesar el pago', 'Cerrar', { duration: 5000 });
       },
+    });
+  }
+
+  private openWompiWidget(payment: any): void {
+    console.log('Payment data:', JSON.stringify(payment));
+    console.log('=== WIDGET DATA ===');
+    console.log('amountInCents:', payment.amountInCents);
+    console.log('reference:', payment.reference);
+    console.log('integritySignature:', payment.integritySignature);
+    console.log('publicKey:', payment.publicKey);
+    console.log('===================');
+    if (this.wompiWidget) return;
+
+    this.wompiWidget = new WidgetCheckout({
+      currency: payment.currency || 'COP',
+      amountInCents: payment.amountInCents,
+      reference: payment.reference,
+      publicKey: payment.publicKey,
+      signature: { integrity: payment.integritySignature },
+      expirationTime: payment.expirationTime,
+      customerData: {
+        email: this.checkoutForm.value.buyerEmail,
+        fullName: this.checkoutForm.value.buyerName,
+      },
+    });
+
+    this.widgetOpen = true;
+
+    this.wompiWidget.open((result: any) => {
+      this.wompiWidget = null;
+      this.widgetOpen = false;
+      const transaction = result?.transaction;
+      if (transaction?.status === 'APPROVED') {
+        this.cartService.clear();
+        this.snackBar.open('✅ ¡Pago aprobado! Tu pedido está confirmado.', 'OK', { duration: 5000 });
+        this.router.navigate(['/checkout/success'], {
+          queryParams: { orderId: this.currentOrderId }
+        });
+      } else if (transaction?.status === 'DECLINED') {
+        this.snackBar.open('❌ Pago rechazado. Intenta con otra tarjeta.', 'Cerrar', { duration: 5000 });
+      } else {
+        this.snackBar.open('Pago cancelado o pendiente.', 'OK', { duration: 3000 });
+      }
     });
   }
 }

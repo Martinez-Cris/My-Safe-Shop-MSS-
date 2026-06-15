@@ -69,8 +69,7 @@ import { Product } from '../../../core/models/product.model';
           [class.out-of-stock]="product.stock === 0">
 
           <div class="card-image" [routerLink]="['/shop', product.id]">
-            <img [src]="product.imageUrl || 'https://via.placeholder.com/300x300?text=Sin+Imagen'"
-              [alt]="product.name">
+            <img [src]="getProductImage(product)" [alt]="product.name">
             <span class="condition-badge">{{ conditionLabels[product.condition] }}</span>
             <span class="stock-badge last-unit" *ngIf="product.stock === 1">¡Última unidad!</span>
             <span class="stock-badge no-stock" *ngIf="product.stock === 0">Agotado</span>
@@ -280,4 +279,11 @@ export class ProductListComponent implements OnInit {
       style: 'currency', currency: 'COP', maximumFractionDigits: 0,
     }).format(price);
   }
+
+  getProductImage(product: any): string {
+    if (product?.images?.length > 0) return product.images[0].base64;
+    if (product?.imageUrl) return product.imageUrl;
+    return 'https://via.placeholder.com/300x300?text=Sin+Imagen';
+  }
+
 }
