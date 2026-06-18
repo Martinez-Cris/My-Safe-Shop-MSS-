@@ -6,7 +6,7 @@
   },
 
   "scripts": {
-    "build": "npx nest build",
+    "build": "nest build",
     "start": "node dist/src/main.js",
     "start:prod": "node dist/src/main.js",
     "start:dev": "nest start --watch",
@@ -24,7 +24,10 @@
   },
 
   "devDependencies": {
-    "prisma": "^5.10.0"
+    "@nestjs/cli": "^10.0.0",
+    "prisma": "^5.10.0",
+    "typescript": "^5.2.2",
+    "ts-node": "^10.9.1"
   },
 
   "prisma": {
