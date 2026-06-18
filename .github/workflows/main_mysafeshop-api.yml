@@ -18,21 +18,26 @@ jobs:
         with:
           node-version: '22.x'
 
-      # 1. Instalar dependencias en backend
+      # 1. Instalar dependencias
       - name: Install dependencies
         working-directory: backend
         run: npm install
 
-      # 2. COMPILAR NestJS (ESTO CREA /dist)
+      # 2. Build NestJS (genera dist/)
       - name: Build NestJS
         working-directory: backend
         run: npm run build
 
-      # 3. Subir SOLO lo necesario (incluye dist)
-      - name: Upload artifact for deployment job
+      # 3. Verificar que dist existe (DEBUG útil)
+      - name: Check dist folder
+        working-directory: backend
+        run: ls -R dist
+
+      # 4. Subir artefacto YA compilado
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: node-app
+          name: backend
           path: backend
 
 
@@ -41,16 +46,16 @@ jobs:
     needs: build
 
     steps:
-      - name: Download artifact from build job
+      - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: node-app
+          name: backend
 
-      # 4. Deploy a Azure App Service
+      # 5. Deploy correcto a Azure
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: mysafeshop-api
           slot-name: Production
-          package: .
+          package: backend
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_250B9D21084743C29565480EC2E45656 }}
