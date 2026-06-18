@@ -47,13 +47,13 @@ jobs:
         with:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_ED1F815EEBFF4C9EB39FF9480523E3A8 }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_D9B093B1C2494F42AEB6A428108DADA9 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_896E90FB74A34B90B92A4078EDD52B15 }}
+          allow-no-subscriptions: true
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'mysafeshop'
+          app-name: 'mysafeshop-api'
           slot-name: 'Production'
           package: .
           
