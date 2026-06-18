@@ -29,7 +29,7 @@ jobs:
           cp package.json release/
           cp package-lock.json release/
           cp -r prisma release/
-          # Copy generated Prisma client so it survives Azure's node_modules handling
+          cp startup.sh release/
           mkdir -p release/node_modules/.prisma
           cp -r node_modules/.prisma/client release/node_modules/.prisma/client
           printf '[config]\nSCM_DO_BUILD_DURING_DEPLOYMENT=false\n' > release/.deployment
