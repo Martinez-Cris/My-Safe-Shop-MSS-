@@ -52,6 +52,13 @@ jobs:
         with:
           name: backend
 
+      - name: Disable Oryx build on Azure
+        uses: azure/appservice-settings@v1
+        with:
+          app-name: mysafeshop-api
+          app-settings-json: '[{"name": "SCM_DO_BUILD_DURING_DEPLOYMENT", "value": "true", "slotSetting": false}]'
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_250B9D21084743C29565480EC2E45656 }}
+
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
