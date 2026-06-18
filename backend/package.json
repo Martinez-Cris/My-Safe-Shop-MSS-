@@ -4,7 +4,6 @@
   "engines": {
     "node": "20.x"
   },
-
   "scripts": {
     "build": "nest build",
     "start": "node dist/src/main.js",
@@ -18,19 +17,46 @@
     "db:seed": "ts-node prisma/seed.ts",
     "db:studio": "prisma studio"
   },
-
   "dependencies": {
+    "@nestjs/common": "^10.3.0",
+    "@nestjs/config": "^3.2.0",
+    "@nestjs/core": "^10.3.0",
+    "@nestjs/jwt": "^11.0.2",
+    "@nestjs/passport": "^11.0.5",
+    "@nestjs/platform-express": "^10.3.0",
+    "@nestjs/platform-socket.io": "^10.3.0",
+    "@nestjs/swagger": "^7.4.2",
+    "@nestjs/websockets": "^10.3.0",
     "@prisma/client": "^5.10.0",
-    "@nestjs/swagger": "^7.4.2"
+    "axios": "^1.18.0",
+    "bcrypt": "^6.0.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "cloudinary": "^2.2.0",
+    "crypto": "^1.0.1",
+    "mercadopago": "^2.0.6",
+    "multer": "^1.4.5-lts.1",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "passport-local": "^1.0.0",
+    "reflect-metadata": "^0.2.1",
+    "resend": "^6.12.4",
+    "rxjs": "^7.8.1",
+    "socket.io": "^4.7.4",
+    "stripe": "^14.21.0"
   },
-
   "devDependencies": {
-    "@nestjs/cli": "^10.0.0",
+    "@nestjs/cli": "^10.3.0",
+    "@nestjs/testing": "^10.3.0",
+    "@types/bcrypt": "^6.0.0",
+    "@types/multer": "^1.4.11",
+    "@types/node": "^20.11.0",
+    "@types/passport-jwt": "^4.0.1",
+    "@types/passport-local": "^1.0.38",
     "prisma": "^5.10.0",
-    "typescript": "^5.2.2",
-    "ts-node": "^10.9.1"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
   },
-
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
   }
