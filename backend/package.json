@@ -4,7 +4,6 @@
   "engines": {
     "node": "20.x"
   },
-
   "scripts": {
     "build": "nest build",
     "start": "node dist/src/main.js",
@@ -18,18 +17,17 @@
     "db:seed": "ts-node prisma/seed.ts",
     "db:studio": "prisma studio"
   },
-
   "dependencies": {
-    "@prisma/client": "^5.10.0"
+    "@prisma/client": "^5.10.0",
+    "@nestjs/swagger": "^6.1.0",
+    "swagger-ui-express": "^4.6.3"
   },
-
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
     "prisma": "^5.10.0",
     "typescript": "^5.2.2",
     "ts-node": "^10.9.1"
   },
-
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
   }
