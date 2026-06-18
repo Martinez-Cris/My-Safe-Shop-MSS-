@@ -1,14 +1,11 @@
 name: Build and deploy Node.js app to Azure Web App - mysafeshop-api
-
 on:
   push:
     branches:
       - main
-
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -17,7 +14,7 @@ jobs:
         with:
           node-version: '20.x'
 
-      - name: Install dependencies
+      - name: Install ALL dependencies (including dev)
         working-directory: backend
         run: npm ci
 
@@ -37,7 +34,7 @@ jobs:
           cp package.json release/
           cp package-lock.json release/
 
-      - name: Install production dependencies
+      - name: Install production dependencies only
         working-directory: backend/release
         run: npm ci --omit=dev
 
@@ -50,7 +47,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
-
     steps:
       - uses: actions/download-artifact@v4
         with:
