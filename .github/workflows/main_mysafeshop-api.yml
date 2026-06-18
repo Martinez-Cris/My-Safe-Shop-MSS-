@@ -8,24 +8,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20.x'
-
-      - name: Install ALL dependencies (including dev)
+          node-version: '22.x'
+      - name: Install dependencies
         working-directory: backend
-        run: npm ci
-
+        run: npm install
       - name: Generate Prisma Client
         working-directory: backend
-        run: npm run prisma:generate
-
+        run: npx prisma generate
       - name: Build NestJS
         working-directory: backend
         run: npm run build
-
       - name: Copy production files
         working-directory: backend
         run: |
@@ -33,17 +28,15 @@ jobs:
           cp -r dist release/
           cp package.json release/
           cp package-lock.json release/
-
-      - name: Install production dependencies only
+          printf '[config]\nSCM_DO_BUILD_DURING_DEPLOYMENT=false\n' > release/.deployment
+      - name: Install production dependencies
         working-directory: backend/release
-        run: npm ci --omit=dev
-
+        run: npm install --omit=dev
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: backend
           path: backend/release
-
   deploy:
     runs-on: ubuntu-latest
     needs: build
@@ -51,14 +44,6 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: backend
-
-      - name: Disable Oryx build on Azure
-        uses: azure/appservice-settings@v1
-        with:
-          app-name: mysafeshop-api
-          app-settings-json: '[{"name": "SCM_DO_BUILD_DURING_DEPLOYMENT", "value": "false", "slotSetting": false}]'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_250B9D21084743C29565480EC2E45656 }}
-
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
