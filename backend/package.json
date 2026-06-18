@@ -5,25 +5,23 @@
     "node": "20.x"
   },
 
-  "scripts": {
-    "build": "nest build",
-    "start": "node dist/main.js",
-    "start:prod": "node dist/main.js",
-    "start:dev": "nest start --watch",
+"scripts": {
+  "build": "prisma generate && nest build",
 
-    "postinstall": "prisma generate",
+  "start": "node dist/main.js",
+  "start:prod": "node dist/main.js",
+  "start:dev": "nest start --watch",
 
-    "prebuild": "prisma generate",
-    "build:prod": "npm run prebuild && nest build",
+  "prisma:generate": "prisma generate",
 
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
+  "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
 
-    "db:migrate": "prisma migrate dev",
-    "db:migrate:deploy": "prisma migrate deploy",
-    "db:generate": "prisma generate",
-    "db:seed": "ts-node prisma/seed.ts",
-    "db:studio": "prisma studio"
-  },
+  "db:migrate": "prisma migrate dev",
+  "db:migrate:deploy": "prisma migrate deploy",
+  "db:generate": "prisma generate",
+  "db:seed": "ts-node prisma/seed.ts",
+  "db:studio": "prisma studio"
+},
 
   "dependencies": {
     "@nestjs/common": "^10.3.0",
