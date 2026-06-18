@@ -28,10 +28,14 @@ jobs:
           cp -r dist release/
           cp package.json release/
           cp package-lock.json release/
+          cp -r prisma release/
           printf '[config]\nSCM_DO_BUILD_DURING_DEPLOYMENT=false\n' > release/.deployment
       - name: Install production dependencies
         working-directory: backend/release
         run: npm install --omit=dev
+      - name: Generate Prisma Client in release
+        working-directory: backend/release
+        run: npx prisma generate
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
