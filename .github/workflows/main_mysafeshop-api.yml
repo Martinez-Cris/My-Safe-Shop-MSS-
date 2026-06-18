@@ -41,21 +41,20 @@ jobs:
           path: backend
 
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: backend
-
-      # 5. Deploy correcto a Azure
-      - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: mysafeshop-api
-          slot-name: Production
-          package: backend
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_250B9D21084743C29565480EC2E45656 }}
+      deploy:
+      runs-on: ubuntu-latest
+      needs: build
+    
+      steps:
+        - name: Download artifact from build job
+          uses: actions/download-artifact@v4
+          with:
+            name: node-app
+    
+        - name: Deploy to Azure Web App
+          uses: azure/webapps-deploy@v3
+          with:
+            app-name: mysafeshop-api
+            slot-name: Production
+            package: .
+            publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_250B9D21084743C29565480EC2E45656 }}
