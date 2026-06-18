@@ -15,15 +15,15 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '22.x'
+          node-version: '20.x'
 
       - name: Install dependencies
         working-directory: backend
-        run: npm install
+        run: npm ci
 
       - name: Generate Prisma Client
         working-directory: backend
-        run: npx prisma generate
+        run: npm run prisma:generate
 
       - name: Build NestJS
         working-directory: backend
@@ -39,7 +39,7 @@ jobs:
 
       - name: Install production dependencies
         working-directory: backend/release
-        run: npm install --omit=dev
+        run: npm ci --omit=dev
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
