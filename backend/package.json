@@ -21,8 +21,7 @@
 
   "dependencies": {
     "@prisma/client": "^5.10.0",
-    "@nestjs/swagger": "^7.4.2",
-    "swagger-ui-express": "^4.6.3"
+    "@nestjs/swagger": "^7.4.2"
   },
 
   "devDependencies": {
