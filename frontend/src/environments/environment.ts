@@ -1,5 +1,5 @@
 export const environment = {
-  production: true,
-  apiUrl: `${window.location.origin}/api/v1`,
-  wsUrl: window.location.origin,
+  production: false,
+  apiUrl: 'http://localhost:3000/api/v1',
+  wsUrl: 'http://localhost:3000',
 };
