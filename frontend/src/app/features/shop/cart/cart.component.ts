@@ -70,8 +70,9 @@ declare const WidgetCheckout: any;
         </div>
 
         <div class="checkout-panel">
+          <!-- Resumen -->
           <mat-card class="summary-card">
-            <h3>Resumen del Pedido</h3>
+            <h3><mat-icon>receipt_long</mat-icon> Resumen del Pedido</h3>
             <mat-divider></mat-divider>
             <div class="summary-row" *ngFor="let item of cartItems">
               <span>{{ item.product.name | slice:0:25 }}...</span>
@@ -79,39 +80,59 @@ declare const WidgetCheckout: any;
             </div>
             <mat-divider></mat-divider>
             <div class="summary-total">
-              <strong>Total</strong>
+              <strong>Total a pagar</strong>
               <strong class="total-price">{{ formatPrice(total) }}</strong>
             </div>
           </mat-card>
 
+          <!-- Formulario -->
           <mat-card class="buyer-form-card">
-            <h3>Datos de Entrega</h3>
+            <h3><mat-icon>local_shipping</mat-icon> Datos de Entrega</h3>
             <form [formGroup]="checkoutForm" class="checkout-form">
               <mat-form-field appearance="outline" class="full-width">
                 <mat-label>Nombre completo</mat-label>
                 <input matInput formControlName="buyerName">
+                <mat-icon matSuffix>person</mat-icon>
                 <mat-error>El nombre es requerido</mat-error>
               </mat-form-field>
               <mat-form-field appearance="outline" class="full-width">
                 <mat-label>Correo electrónico</mat-label>
                 <input matInput formControlName="buyerEmail" type="email">
+                <mat-icon matSuffix>email</mat-icon>
                 <mat-error>Email inválido</mat-error>
               </mat-form-field>
               <mat-form-field appearance="outline" class="full-width">
                 <mat-label>Teléfono (opcional)</mat-label>
                 <input matInput formControlName="buyerPhone">
+                <mat-icon matSuffix>phone</mat-icon>
               </mat-form-field>
               <mat-form-field appearance="outline" class="full-width">
                 <mat-label>Dirección de entrega</mat-label>
                 <textarea matInput formControlName="shippingAddress" rows="2"></textarea>
                 <mat-error>La dirección es requerida</mat-error>
               </mat-form-field>
-              <button mat-raised-button color="primary" class="checkout-btn"
-                (click)="onCheckout()" [disabled]="isLoading || widgetOpen">
-                <mat-spinner *ngIf="isLoading" diameter="20"></mat-spinner>
-                <mat-icon *ngIf="!isLoading">lock</mat-icon>
-                {{ isLoading ? 'Procesando...' : 'Pagar — ' + formatPrice(total) }}
+
+              <!-- Botón de pago mejorado -->
+              <button class="pay-btn" (click)="onCheckout()" [disabled]="isLoading || widgetOpen">
+                <div class="pay-btn-inner" *ngIf="!isLoading">
+                  <mat-icon>lock</mat-icon>
+                  <div class="pay-btn-text">
+                    <span class="pay-label">Pagar de forma segura</span>
+                    <span class="pay-amount">{{ formatPrice(total) }}</span>
+                  </div>
+                  <mat-icon class="pay-arrow">arrow_forward</mat-icon>
+                </div>
+                <div class="pay-btn-loading" *ngIf="isLoading">
+                  <mat-spinner diameter="24"></mat-spinner>
+                  <span>Procesando...</span>
+                </div>
               </button>
+
+              <div class="pay-badges">
+                <span class="badge"><mat-icon>verified_user</mat-icon> Pago seguro</span>
+                <span class="badge"><mat-icon>payment</mat-icon> Wompi</span>
+                <span class="badge"><mat-icon>credit_card</mat-icon> Tarjeta / Nequi</span>
+              </div>
             </form>
           </mat-card>
         </div>
@@ -124,33 +145,71 @@ declare const WidgetCheckout: any;
     .empty-cart { text-align: center; padding: 4rem;
       .empty-icon { font-size: 5rem; width: 5rem; height: 5rem; color: #d1d5db; }
       h2 { margin: 1rem 0 0.5rem; } p { color: #6b7280; margin-bottom: 2rem; } }
-    .cart-content { display: grid; grid-template-columns: 1fr 380px; gap: 2rem;
+    .cart-content { display: grid; grid-template-columns: 1fr 400px; gap: 2rem;
       @media (max-width: 900px) { grid-template-columns: 1fr; } }
-    .cart-item { display: flex; gap: 1rem; padding: 1rem; margin-bottom: 1rem; align-items: center;
-      img { width: 90px; height: 90px; object-fit: cover; border-radius: 8px; flex-shrink: 0; } }
-    .item-info { flex: 1;
-      h3 { margin: 0 0 0.25rem; font-size: 0.95rem; font-weight: 600; }
-      .item-meta { color: #6b7280; font-size: 0.8rem; margin: 0.25rem 0; }
-      .item-price { color: #059669; font-weight: 700; margin: 0.25rem 0; } }
-    .single-unit-badge { display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; color: #d97706; background: #fef3c7; padding: 2px 8px; border-radius: 99px; margin-top: 0.25rem;
-      mat-icon { font-size: 0.85rem; width: 0.85rem; height: 0.85rem; } }
-    .item-controls { display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; }
-    .qty-control { display: flex; align-items: center; gap: 0.25rem; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0 4px;
-      .qty { min-width: 28px; text-align: center; font-weight: 600; } }
-    .qty-fixed { font-size: 0.85rem; color: #6b7280; border: 1px solid #e5e7eb; padding: 4px 10px; border-radius: 8px; }
-    .item-subtotal { font-weight: 700; color: #1f2937; margin: 0; }
+    .cart-item {
+  display: flex; flex-direction: row; gap: 1.25rem; padding: 1.25rem;
+  margin-bottom: 1rem; align-items: center; border-radius: 16px !important;
+  border: 2px solid #e5e7eb; transition: border-color 0.2s;
+  &:hover { border-color: #a7f3d0; }
+  img { width: 110px; height: 110px; object-fit: cover; border-radius: 12px;
+    flex-shrink: 0; border: 1px solid #e5e7eb; }
+}
+.item-info { flex: 1;
+  h3 { margin: 0 0 0.25rem; font-size: 1rem; font-weight: 700; color: #064e3b; }
+  .item-meta { color: #6b7280; font-size: 0.85rem; margin: 0.25rem 0; }
+  .item-price { color: #059669; font-weight: 800; font-size: 1.25rem; margin: 0.35rem 0; } }
+.single-unit-badge { display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; color: #d97706; background: #fef3c7; padding: 2px 8px; border-radius: 99px; margin-top: 0.25rem;
+  mat-icon { font-size: 0.85rem; width: 0.85rem; height: 0.85rem; } }
+.item-controls { display: flex; flex-direction: column; align-items: flex-end;
+  gap: 0.5rem; min-width: 90px; }
+.qty-control { display: flex; align-items: center; gap: 0.25rem; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0 4px;
+  .qty { min-width: 28px; text-align: center; font-weight: 600; } }
+.qty-fixed { font-size: 0.85rem; color: #6b7280; border: 1px solid #e5e7eb; padding: 4px 10px; border-radius: 8px; }
+.item-subtotal { font-weight: 800; color: #059669; font-size: 1.1rem; margin: 0; }
     .checkout-panel { display: flex; flex-direction: column; gap: 1rem; }
-    .summary-card { padding: 1rem;
-      h3 { margin: 0 0 0.75rem; font-size: 1rem; }
+    .summary-card { padding: 1.25rem;
+      h3 { display: flex; align-items: center; gap: 0.5rem; margin: 0 0 0.75rem; font-size: 1rem; font-weight: 700;
+        mat-icon { color: #059669; font-size: 1.2rem; } }
       .summary-row { display: flex; justify-content: space-between; padding: 0.4rem 0; font-size: 0.85rem; color: #374151; }
       mat-divider { margin: 0.75rem 0; } }
-    .summary-total { display: flex; justify-content: space-between; font-size: 1.1rem;
-      .total-price { color: #059669; font-size: 1.25rem; } }
-    .buyer-form-card { padding: 1rem; h3 { margin: 0 0 1rem; font-size: 1rem; } }
+    .summary-total { display: flex; justify-content: space-between; font-size: 1.15rem; align-items: center;
+      .total-price { color: #059669; font-size: 1.5rem; font-weight: 800; } }
+    .buyer-form-card { padding: 1.25rem;
+      h3 { display: flex; align-items: center; gap: 0.5rem; margin: 0 0 1rem; font-size: 1rem; font-weight: 700;
+        mat-icon { color: #059669; font-size: 1.2rem; } } }
     .checkout-form { display: flex; flex-direction: column; gap: 0.5rem; }
     .full-width { width: 100%; }
-    .checkout-btn { width: 100%; height: 52px; font-size: 1rem; font-weight: 700;
-      display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+
+    /* Botón de pago */
+    .pay-btn {
+      width: 100%; border: none; border-radius: 16px; cursor: pointer; margin-top: 0.75rem;
+      padding: 0; overflow: hidden;
+      background: linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%);
+      box-shadow: 0 8px 25px rgba(5,150,105,0.45);
+      transition: transform 0.2s, box-shadow 0.2s;
+      &:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 35px rgba(5,150,105,0.55); }
+      &:active:not(:disabled) { transform: translateY(0); }
+      &:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    }
+    .pay-btn-inner {
+      display: flex; align-items: center; gap: 1rem;
+      padding: 1rem 1.5rem;
+      mat-icon { color: white; font-size: 1.5rem; width: 1.5rem; height: 1.5rem; flex-shrink: 0; }
+      .pay-arrow { margin-left: auto; opacity: 0.8; }
+    }
+    .pay-btn-text { display: flex; flex-direction: column; align-items: flex-start;
+      .pay-label { color: rgba(255,255,255,0.9); font-size: 0.85rem; font-weight: 500; }
+      .pay-amount { color: white; font-size: 1.4rem; font-weight: 800; line-height: 1.2; }
+    }
+    .pay-btn-loading { display: flex; align-items: center; justify-content: center; gap: 0.75rem;
+      padding: 1.1rem; color: white; font-size: 1rem; font-weight: 600; }
+
+    /* Badges de seguridad */
+    .pay-badges { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-top: 0.75rem; }
+    .badge { display: flex; align-items: center; gap: 0.25rem; font-size: 0.72rem; color: #6b7280;
+      background: #f9fafb; border: 1px solid #e5e7eb; padding: 3px 10px; border-radius: 99px;
+      mat-icon { font-size: 0.85rem; width: 0.85rem; height: 0.85rem; color: #059669; } }
   `]
 })
 export class CartComponent implements OnInit {
@@ -232,13 +291,6 @@ export class CartComponent implements OnInit {
   }
 
   private openWompiWidget(payment: any): void {
-    console.log('Payment data:', JSON.stringify(payment));
-    console.log('=== WIDGET DATA ===');
-    console.log('amountInCents:', payment.amountInCents);
-    console.log('reference:', payment.reference);
-    console.log('integritySignature:', payment.integritySignature);
-    console.log('publicKey:', payment.publicKey);
-    console.log('===================');
     if (this.wompiWidget) return;
 
     this.wompiWidget = new WidgetCheckout({
